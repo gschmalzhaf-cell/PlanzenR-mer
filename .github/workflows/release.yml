@@ -35,12 +35,12 @@ jobs:
         if: env.HAS_KEYSTORE == 'true'
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-        run: echo "$KEYSTORE_BASE64" | base64 -d > $HOME/roemerplant.keystore
+        run: echo "$KEYSTORE_BASE64" | base64 -d > ${{ github.workspace }}/roemerplant.keystore
 
       - name: Build signed release APK
         if: env.HAS_KEYSTORE == 'true'
         env:
-          KEYSTORE_FILE: $HOME/roemerplant.keystore
+          KEYSTORE_FILE: ${{ github.workspace }}/roemerplant.keystore
         run: gradle assembleRelease --stacktrace && cp app/build/outputs/apk/release/app-release.apk RoemerPlant-${{ github.ref_name }}.apk
 
       - name: Build debug APK (fallback without signing secrets)
