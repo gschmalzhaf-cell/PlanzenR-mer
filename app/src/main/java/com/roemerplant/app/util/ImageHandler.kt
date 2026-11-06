@@ -5,7 +5,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.core.content.FileProvider
-import java.io.File
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.UUID
