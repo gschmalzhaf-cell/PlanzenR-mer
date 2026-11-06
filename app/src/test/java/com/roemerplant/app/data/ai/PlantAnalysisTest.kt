@@ -36,7 +36,7 @@ class PlantAnalysisTest {
 
         assertEquals("Monstera deliciosa", analysis.species)
         assertEquals("Fensterblatt", analysis.commonName)
-        assertEquals("hell, ohne direkte Mittagssonne", analysis.care.light.lowercase())
+        assertEquals("hell, ohne direkte mittagssonne", analysis.care.light.lowercase())
         assertEquals("gesund", analysis.health.status)
         assertTrue(analysis.health.instructions.isNotEmpty())
     }
