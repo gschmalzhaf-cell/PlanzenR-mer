@@ -3,15 +3,12 @@ package com.roemerplant.app.data.ai
 import com.roemerplant.app.data.settings.SettingsRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.HttpException
 import retrofit2.Retrofit
-import retrofit2.converter.kotlinxserialization.asConverterFactory
+import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -74,7 +71,10 @@ class PlantAiRepository @Inject constructor(
                 ),
                 response_format = ResponseFormat(
                     type = "json_schema",
-                    json_schema = JsonSchemaSpec(name = "plant_analysis", schema = analysisSchema())
+                    json_schema = JsonSchemaSpec(
+                        name = "plant_analysis",
+                        schema = json.parseToJsonElement(ANALYSIS_SCHEMA)
+                    )
                 )
             )
             val response = api.chatCompletions(request)
@@ -89,53 +89,47 @@ class PlantAiRepository @Inject constructor(
             throw error
         }
 
-    private fun analysisSchema() = buildJsonObject {
-        put("type", "object")
-        put("properties", buildJsonObject {
-            put("species", buildJsonObject { put("type", "string") })
-            put("commonName", buildJsonObject { put("type", "string") })
-            put("description", buildJsonObject { put("type", "string") })
-            put("care", buildJsonObject {
-                put("type", "object")
-                put("properties", buildJsonObject {
-                    put("light", buildJsonObject { put("type", "string") })
-                    put("water", buildJsonObject { put("type", "string") })
-                    put("humidity", buildJsonObject { put("type", "string") })
-                    put("temperature", buildJsonObject { put("type", "string") })
-                    put("fertilizer", buildJsonObject { put("type", "string") })
-                    put("soil", buildJsonObject { put("type", "string") })
-                })
-                put("required", buildJsonArray {
-                    add("light"); add("water"); add("humidity"); add("temperature"); add("fertilizer"); add("soil")
-                })
-                put("additionalProperties", false)
-            })
-            put("health", buildJsonObject {
-                put("type", "object")
-                put("properties", buildJsonObject {
-                    put("status", buildJsonObject {
-                        put("type", "string")
-                        put("enum", buildJsonArray {
-                            add("gesund"); add("leicht gestresst"); add("krank"); add("Schädlingsbefall"); add("unbekannt")
-                        })
-                    })
-                    put("analysis", buildJsonObject { put("type", "string") })
-                    put("instructions", buildJsonObject {
-                        put("type", "array")
-                        put("items", buildJsonObject { put("type", "string") })
-                    })
-                })
-                put("required", buildJsonArray { add("status"); add("analysis"); add("instructions") })
-                put("additionalProperties", false)
-            })
-        })
-        put("required", buildJsonArray {
-            add("species"); add("commonName"); add("description"); add("care"); add("health")
-        })
-        put("additionalProperties", false)
-    }
-
     companion object {
         const val MODEL = "pixtral-12b-latest"
+
+        private const val ANALYSIS_SCHEMA = """{
+            "type": "object",
+            "properties": {
+                "species": {"type": "string"},
+                "commonName": {"type": "string"},
+                "description": {"type": "string"},
+                "care": {
+                    "type": "object",
+                    "properties": {
+                        "light": {"type": "string"},
+                        "water": {"type": "string"},
+                        "humidity": {"type": "string"},
+                        "temperature": {"type": "string"},
+                        "fertilizer": {"type": "string"},
+                        "soil": {"type": "string"}
+                    },
+                    "required": ["light", "water", "humidity", "temperature", "fertilizer", "soil"],
+                    "additionalProperties": false
+                },
+                "health": {
+                    "type": "object",
+                    "properties": {
+                        "status": {
+                            "type": "string",
+                            "enum": ["gesund", "leicht gestresst", "krank", "Schädlingsbefall", "unbekannt"]
+                        },
+                        "analysis": {"type": "string"},
+                        "instructions": {
+                            "type": "array",
+                            "items": {"type": "string"}
+                        }
+                    },
+                    "required": ["status", "analysis", "instructions"],
+                    "additionalProperties": false
+                }
+            },
+            "required": ["species", "commonName", "description", "care", "health"],
+            "additionalProperties": false
+        }"""
     }
 }

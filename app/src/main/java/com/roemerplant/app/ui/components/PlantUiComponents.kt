@@ -33,9 +33,9 @@ fun SectionCard(
 fun EditableField(
     label: String,
     value: String,
-    onValueChange: (String) -> Unit,
+    minLines: Int = 1,
     modifier: Modifier = Modifier,
-    minLines: Int = 1
+    onValueChange: (String) -> Unit
 ) {
     OutlinedTextField(
         value = value,
