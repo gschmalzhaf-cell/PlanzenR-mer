@@ -133,7 +133,17 @@ fun PlantsScreen(
                 PlantCard(
                     plant = plant,
                     onClick = { onOpenPlant(plant.id) },
-                    onDelete = { viewModel.delete(plant) }
+                    onDelete = { viewModel.delete(plant) },
+                    onWater = {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        viewModel.markWatered(plant)
+                        Toast.makeText(context, "${plant.name} gegossen", Toast.LENGTH_SHORT).show()
+                    },
+                    onFertilize = {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        viewModel.markFertilized(plant)
+                        Toast.makeText(context, "${plant.name} gedüngt", Toast.LENGTH_SHORT).show()
+                    }
                 )
             }
         }
