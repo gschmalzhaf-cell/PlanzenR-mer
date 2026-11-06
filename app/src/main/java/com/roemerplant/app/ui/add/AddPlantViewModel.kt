@@ -60,6 +60,12 @@ class AddPlantViewModel @Inject constructor(
         _state.value = _state.value.copy(photoUri = copied ?: uri.toString())
     }
 
+    fun createCameraCaptureUri(): Uri = imageHandler.createCameraCaptureUri()
+
+    fun onPhotoTaken(uri: Uri, success: Boolean) {
+        if (success) onPhotoPicked(uri)
+    }
+
     fun analyzePhoto() {
         val photoUri = _state.value.photoUri ?: return
         _state.value = _state.value.copy(isAnalyzing = true, error = null)

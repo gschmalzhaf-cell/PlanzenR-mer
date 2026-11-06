@@ -3,6 +3,9 @@ package com.roemerplant.app.ui.add
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,6 +57,11 @@ fun AddPlantScreen(
         ActivityResultContracts.PickVisualMedia()
     ) { uri -> uri?.let(viewModel::onPhotoPicked) }
 
+    var cameraUri by remember { mutableStateOf<Uri?>(null) }
+    val takePicture = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success -> cameraUri?.let { uri -> viewModel.onPhotoTaken(uri, success) } }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -73,16 +82,29 @@ fun AddPlantScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            OutlinedButton(
-                onClick = {
-                    photoPicker.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    )
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Filled.PhotoCamera, contentDescription = null)
-                Text("Foto auswählen", modifier = Modifier.padding(start = 8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(
+                    onClick = {
+                        val uri = viewModel.createCameraCaptureUri()
+                        cameraUri = uri
+                        takePicture.launch(uri)
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Filled.PhotoCamera, contentDescription = null)
+                    Text("Foto aufnehmen", modifier = Modifier.padding(start = 8.dp))
+                }
+                OutlinedButton(
+                    onClick = {
+                        photoPicker.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Filled.PhotoLibrary, contentDescription = null)
+                    Text("Auswählen", modifier = Modifier.padding(start = 8.dp))
+                }
             }
 
             state.photoUri?.let { uri ->
