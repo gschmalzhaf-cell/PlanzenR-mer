@@ -1,13 +1,19 @@
 package com.roemerplant.app.ui.detail
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -19,6 +25,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -26,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import android.net.Uri
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -47,6 +57,15 @@ fun PlantDetailScreen(
     val state by viewModel.state.collectAsState()
     val apiKeyConfigured by viewModel.apiKeyConfigured.collectAsState()
     val plant = state.plant
+
+    var cameraUri by remember { mutableStateOf<Uri?>(null) }
+    val takePicture = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success -> cameraUri?.let { uri -> viewModel.onPhotoTaken(uri, success) } }
+
+    val photoPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri -> uri?.let(viewModel::onPhotoPicked) }
 
     Scaffold(
         topBar = {
@@ -146,6 +165,36 @@ fun PlantDetailScreen(
                 }
             }
 
+            if (!state.isEditing) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            val uri = viewModel.createCameraCaptureUri()
+                            cameraUri = uri
+                            takePicture.launch(uri)
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Filled.PhotoCamera, contentDescription = null)
+                        Text("Neues Foto", modifier = Modifier.padding(start = 8.dp))
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            photoPicker.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Filled.PhotoLibrary, contentDescription = null)
+                        Text("Auswählen", modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+            }
+
             if (plant.photoUri != null && apiKeyConfigured && !state.isEditing) {
                 Button(
                     onClick = viewModel::analyzeHealth,
@@ -161,7 +210,7 @@ fun PlantDetailScreen(
                         Text("KI analysiert …")
                     } else {
                         Icon(Icons.Filled.AutoAwesome, contentDescription = null)
-                        Text("Gesundheit neu analysieren", modifier = Modifier.padding(start = 8.dp))
+                        Text("Gesundheit mit Foto analysieren", modifier = Modifier.padding(start = 8.dp))
                     }
                 }
             }

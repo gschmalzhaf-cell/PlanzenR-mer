@@ -59,6 +59,17 @@ class PlantDetailViewModel @Inject constructor(
         _state.value = _state.value.copy(isEditing = editing)
     }
 
+    fun createCameraCaptureUri(): Uri = imageHandler.createCameraCaptureUri()
+
+    fun onPhotoPicked(uri: Uri) {
+        val copied = imageHandler.copyToInternalStorage(uri) ?: uri.toString()
+        updatePlant { it.copy(photoUri = copied, updatedAt = System.currentTimeMillis()) }
+    }
+
+    fun onPhotoTaken(uri: Uri, success: Boolean) {
+        if (success) onPhotoPicked(uri)
+    }
+
     fun analyzeHealth() {
         val plant = _state.value.plant ?: return
         val photoUri = plant.photoUri ?: return
