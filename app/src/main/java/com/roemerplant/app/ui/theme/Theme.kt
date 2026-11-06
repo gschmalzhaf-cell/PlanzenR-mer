@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun RoemerPlantTheme(
-    theme: AppTheme = AppTheme.FOREST,
+    theme: AppTheme = AppTheme.HERBARIUM,
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {

@@ -5,10 +5,63 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
 enum class AppTheme(val label: String) {
+    HERBARIUM("Herbarium"),
     FOREST("Waldgrün"),
     BLOSSOM("Blütenrosa"),
     TERRACOTTA("Terrakotta")
 }
+
+private val HerbariumLight = lightColorScheme(
+    primary = Color(0xFF1E3D2F),
+    onPrimary = Color(0xFFF6F5EE),
+    primaryContainer = Color(0xFFE8EFEA),
+    onPrimaryContainer = Color(0xFF1E3D2F),
+    secondary = Color(0xFF2D5542),
+    onSecondary = Color(0xFFF6F5EE),
+    secondaryContainer = Color(0xFFE8EFEA),
+    onSecondaryContainer = Color(0xFF1E3D2F),
+    tertiary = Color(0xFFC86D51),
+    onTertiary = Color(0xFFFFF8F5),
+    tertiaryContainer = Color(0xFFF8ECE8),
+    onTertiaryContainer = Color(0xFF5C2A18),
+    error = Color(0xFFBA1A1A),
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFFFDAD6),
+    onErrorContainer = Color(0xFF410002),
+    background = Color(0xFFF6F5EE),
+    onBackground = Color(0xFF18241D),
+    surface = Color(0xFFFCFBF7),
+    onSurface = Color(0xFF18241D),
+    surfaceVariant = Color(0xFFEFEDE3),
+    onSurfaceVariant = Color(0xFF637568),
+    outline = Color(0xFFC5A059)
+)
+
+private val HerbariumDark = darkColorScheme(
+    primary = Color(0xFFA9C9B4),
+    onPrimary = Color(0xFF0E2418),
+    primaryContainer = Color(0xFF1E3D2F),
+    onPrimaryContainer = Color(0xFFE8EFEA),
+    secondary = Color(0xFF8AA89B),
+    onSecondary = Color(0xFF0E2418),
+    secondaryContainer = Color(0xFF2D5542),
+    onSecondaryContainer = Color(0xFFE8EFEA),
+    tertiary = Color(0xFFE2A088),
+    onTertiary = Color(0xFF2C1305),
+    tertiaryContainer = Color(0xFF8A4A34),
+    onTertiaryContainer = Color(0xFFF8ECE8),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    background = Color(0xFF121A15),
+    onBackground = Color(0xFFE6E4DA),
+    surface = Color(0xFF18241D),
+    onSurface = Color(0xFFE6E4DA),
+    surfaceVariant = Color(0xFF2A362E),
+    onSurfaceVariant = Color(0xFFA3B2A7),
+    outline = Color(0xFFC5A059)
+)
 
 private val ForestLight = lightColorScheme(
     primary = Color(0xFF2E7D32),
@@ -149,6 +202,7 @@ private val TerracottaDark = darkColorScheme(
 )
 
 fun colorSchemeFor(theme: AppTheme, darkTheme: Boolean) = when (theme) {
+    AppTheme.HERBARIUM -> if (darkTheme) HerbariumDark else HerbariumLight
     AppTheme.FOREST -> if (darkTheme) ForestDark else ForestLight
     AppTheme.BLOSSOM -> if (darkTheme) BlossomDark else BlossomLight
     AppTheme.TERRACOTTA -> if (darkTheme) TerracottaDark else TerracottaLight

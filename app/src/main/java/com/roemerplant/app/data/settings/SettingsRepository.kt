@@ -42,8 +42,8 @@ class SettingsRepository @Inject constructor(
 
     val appTheme: Flow<com.roemerplant.app.ui.theme.AppTheme> = context.dataStore.data.map { prefs ->
         runCatching {
-            com.roemerplant.app.ui.theme.AppTheme.valueOf(prefs[themeKey] ?: "FOREST")
-        }.getOrDefault(com.roemerplant.app.ui.theme.AppTheme.FOREST)
+            com.roemerplant.app.ui.theme.AppTheme.valueOf(prefs[themeKey] ?: "HERBARIUM")
+        }.getOrDefault(com.roemerplant.app.ui.theme.AppTheme.HERBARIUM)
     }
 
     suspend fun setAppTheme(theme: com.roemerplant.app.ui.theme.AppTheme) {

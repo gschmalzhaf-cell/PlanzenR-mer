@@ -27,6 +27,7 @@ class PlantRepository @Inject constructor(
         species = listOf(analysis.species, analysis.commonName)
             .filter { it.isNotBlank() }
             .joinToString(" — "),
+        family = if (plant.family.isBlank()) analysis.family else plant.family,
         description = analysis.description,
         careLight = analysis.care.light,
         careWater = analysis.care.water,

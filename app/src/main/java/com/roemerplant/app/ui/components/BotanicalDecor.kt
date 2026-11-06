@@ -128,3 +128,36 @@ fun GrowingPlantLoader(
         )
     }
 }
+
+@Composable
+fun WashiTape(modifier: Modifier = Modifier) {
+    androidx.compose.material3.Surface(
+        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(bottomStart = 4.dp, bottomEnd = 4.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            width = 0.5.dp,
+            color = androidx.compose.material3.MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+        ),
+        modifier = modifier
+    ) {}
+}
+
+@Composable
+fun RefStamp(ref: String, modifier: Modifier = Modifier) {
+    androidx.compose.material3.Surface(
+        color = androidx.compose.material3.MaterialTheme.colorScheme.surface.copy(alpha = 0.75f),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            width = 1.dp,
+            color = androidx.compose.material3.MaterialTheme.colorScheme.outline.copy(alpha = 0.8f)
+        ),
+        modifier = modifier
+    ) {
+        androidx.compose.material3.Text(
+            text = ref,
+            style = androidx.compose.material3.MaterialTheme.typography.labelMedium,
+            color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+        )
+    }
+}

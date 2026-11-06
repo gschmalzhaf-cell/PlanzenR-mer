@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class PlantAnalysis(
     val species: String = "",
     val commonName: String = "",
+    val family: String = "",
     val description: String = "",
     val care: CareInstructions = CareInstructions(),
     val health: HealthAssessment = HealthAssessment()

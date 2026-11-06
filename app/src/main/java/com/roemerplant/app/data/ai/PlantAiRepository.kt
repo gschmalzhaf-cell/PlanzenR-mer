@@ -104,6 +104,7 @@ class PlantAiRepository @Inject constructor(
             "properties": {
                 "species": {"type": "string"},
                 "commonName": {"type": "string"},
+                "family": {"type": "string"},
                 "description": {"type": "string"},
                 "care": {
                     "type": "object",
@@ -135,7 +136,7 @@ class PlantAiRepository @Inject constructor(
                     "additionalProperties": false
                 }
             },
-            "required": ["species", "commonName", "description", "care", "health"],
+            "required": ["species", "commonName", "family", "description", "care", "health"],
             "additionalProperties": false
         }"""
     }

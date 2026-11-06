@@ -16,7 +16,7 @@ data class SettingsUiState(
     val apiKeyInput: String = "",
     val savedKey: String = "",
     val modelInput: String = "",
-    val theme: AppTheme = AppTheme.FOREST,
+    val theme: AppTheme = AppTheme.HERBARIUM,
     val availableModels: List<String> = emptyList(),
     val isLoadingModels: Boolean = false,
     val isSaving: Boolean = false,

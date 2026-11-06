@@ -19,7 +19,7 @@ object AppModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): PlantDatabase =
         Room.databaseBuilder(context, PlantDatabase::class.java, "roemerplant.db")
-            .fallbackToDestructiveMigration()
+            .addMigrations(com.roemerplant.app.data.db.PlantDatabase.MIGRATION_1_2)
             .build()
 
     @Provides

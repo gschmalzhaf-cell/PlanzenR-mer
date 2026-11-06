@@ -18,6 +18,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,7 +38,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
@@ -60,6 +66,8 @@ fun PlantDetailScreen(
     val state by viewModel.state.collectAsState()
     val apiKeyConfigured by viewModel.apiKeyConfigured.collectAsState()
     val plant = state.plant
+    val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
 
     var cameraUri by remember { mutableStateOf<Uri?>(null) }
     val takePicture = rememberLauncherForActivityResult(
@@ -119,6 +127,7 @@ fun PlantDetailScreen(
                 SectionCard("Allgemein") {
                     EditableField("Name", plant.name) { v -> viewModel.updatePlant { it.copy(name = v, updatedAt = System.currentTimeMillis()) } }
                     EditableField("Art", plant.species) { v -> viewModel.updatePlant { it.copy(species = v, updatedAt = System.currentTimeMillis()) } }
+                    EditableField("Familie (Linné)", plant.family) { v -> viewModel.updatePlant { it.copy(family = v) } }
                     EditableField("Beschreibung", plant.description, minLines = 3) { v -> viewModel.updatePlant { it.copy(description = v, updatedAt = System.currentTimeMillis()) } }
                 }
                 SectionCard("Pflege") {
@@ -128,6 +137,12 @@ fun PlantDetailScreen(
                     EditableField("Temperatur", plant.careTemperature) { v -> viewModel.updatePlant { it.copy(careTemperature = v) } }
                     EditableField("Düngen", plant.careFertilizer) { v -> viewModel.updatePlant { it.copy(careFertilizer = v) } }
                     EditableField("Substrat", plant.careSoil) { v -> viewModel.updatePlant { it.copy(careSoil = v) } }
+                    EditableField("Gieß-Intervall (Tage)", plant.waterIntervalDays.toString()) { v ->
+                        viewModel.updatePlant { it.copy(waterIntervalDays = v.toIntOrNull() ?: it.waterIntervalDays) }
+                    }
+                    EditableField("Dünge-Intervall (Tage)", plant.fertilizeIntervalDays.toString()) { v ->
+                        viewModel.updatePlant { it.copy(fertilizeIntervalDays = v.toIntOrNull() ?: it.fertilizeIntervalDays) }
+                    }
                 }
                 SectionCard("Gesundheit") {
                     EditableField("Status", plant.healthStatus) { v -> viewModel.updatePlant { it.copy(healthStatus = v) } }
@@ -136,6 +151,13 @@ fun PlantDetailScreen(
                 }
             } else {
                 SectionCard("Allgemein") {
+                    if (plant.family.isNotBlank()) {
+                        Text(
+                            plant.family.uppercase(),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
                     InfoRow("Art", plant.species)
                     InfoRow("Beschreibung", plant.description)
                 }
@@ -195,6 +217,36 @@ fun PlantDetailScreen(
                     ) {
                         Icon(Icons.Filled.PhotoLibrary, contentDescription = null)
                         Text("Auswählen", modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+            }
+
+            if (!state.isEditing) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.updatePlant { it.copy(lastWateredAt = System.currentTimeMillis()) }
+                            Toast.makeText(context, "${plant.name} gegossen", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Filled.WaterDrop, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary)
+                        Text("Gegossen", modifier = Modifier.padding(start = 8.dp))
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.updatePlant { it.copy(lastFertilizedAt = System.currentTimeMillis()) }
+                            Toast.makeText(context, "${plant.name} gedüngt", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Filled.Science, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
+                        Text("Gedüngt", modifier = Modifier.padding(start = 8.dp))
                     }
                 }
             }

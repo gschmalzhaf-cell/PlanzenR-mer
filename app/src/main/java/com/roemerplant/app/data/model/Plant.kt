@@ -8,6 +8,7 @@ data class Plant(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val species: String = "",
+    val family: String = "",
     val photoUri: String? = null,
     val description: String = "",
     val careLight: String = "",
@@ -20,6 +21,10 @@ data class Plant(
     val healthAnalysis: String = "",
     val healthInstructions: String = "",
     val lastAnalyzedAt: Long? = null,
+    val lastWateredAt: Long? = null,
+    val waterIntervalDays: Int = 7,
+    val lastFertilizedAt: Long? = null,
+    val fertilizeIntervalDays: Int = 30,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )

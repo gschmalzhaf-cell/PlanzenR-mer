@@ -20,6 +20,7 @@ import javax.inject.Inject
 data class AddPlantUiState(
     val name: String = "",
     val species: String = "",
+    val family: String = "",
     val description: String = "",
     val careLight: String = "",
     val careWater: String = "",
@@ -81,6 +82,7 @@ class AddPlantViewModel @Inject constructor(
                     _state.value = current.copy(
                         name = current.name.ifBlank { analysis.commonName.ifBlank { analysis.species } },
                         species = analysis.species,
+                        family = analysis.family,
                         description = analysis.description,
                         careLight = analysis.care.light,
                         careWater = analysis.care.water,
@@ -112,6 +114,7 @@ class AddPlantViewModel @Inject constructor(
                 Plant(
                     name = s.name.ifBlank { s.species },
                     species = s.species,
+                    family = s.family,
                     photoUri = s.photoUri,
                     description = s.description,
                     careLight = s.careLight,

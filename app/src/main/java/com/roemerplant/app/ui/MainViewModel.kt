@@ -16,5 +16,5 @@ class MainViewModel @Inject constructor(
 ) : ViewModel() {
 
     val theme: StateFlow<AppTheme> = settings.appTheme
-        .stateIn(viewModelScope, SharingStarted.Eagerly, AppTheme.FOREST)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, AppTheme.HERBARIUM)
 }
