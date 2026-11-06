@@ -36,7 +36,7 @@ class PlantAiRepository @Inject constructor(
             .readTimeout(120, TimeUnit.SECONDS)
             .build()
         Retrofit.Builder()
-            .baseUrl("https://api.mistral.ai/")
+            .baseUrl("https://api.mistral.ai/v1/")
             .client(client)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()
