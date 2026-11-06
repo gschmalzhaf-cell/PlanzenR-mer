@@ -41,6 +41,7 @@ fun SectionCard(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(title, style = MaterialTheme.typography.titleMedium)
+            DividerDots()
             content()
         }
     }

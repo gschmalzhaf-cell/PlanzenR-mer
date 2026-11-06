@@ -23,6 +23,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.roemerplant.app.data.model.Plant
+import com.roemerplant.app.ui.components.LeafPattern
 import com.roemerplant.app.ui.components.StatusBadge
 
 @Composable
@@ -77,6 +79,9 @@ fun PlantsScreen(
             }
         }
     } else {
+        Box(modifier = Modifier.fillMaxSize()) {
+            LeafPattern(modifier = Modifier.fillMaxSize())
+        }
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
@@ -110,12 +115,20 @@ private fun PlantCard(plant: Plant, onClick: () -> Unit, onDelete: () -> Unit) {
                         .clip(RoundedCornerShape(8.dp))
                 )
             } else {
-                Icon(
-                    Icons.Filled.Eco,
-                    contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.size(64.dp)
+                ) {
+                    Icon(
+                        Icons.Filled.Eco,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .size(40.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(plant.name.ifBlank { "Ohne Namen" }, style = MaterialTheme.typography.titleMedium)

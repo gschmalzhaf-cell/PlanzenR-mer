@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.roemerplant.app.ui.components.EditableField
+import com.roemerplant.app.ui.components.GrowingPlantLoader
 import com.roemerplant.app.ui.components.SectionCard
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -124,10 +125,11 @@ fun AddPlantScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         if (state.isAnalyzing) {
-                            CircularProgressIndicator(
+                            GrowingPlantLoader(
                                 modifier = Modifier.padding(end = 8.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary
+                                stemColor = MaterialTheme.colorScheme.onPrimary,
+                                leafColor = MaterialTheme.colorScheme.onPrimary,
+                                potColor = MaterialTheme.colorScheme.onPrimary
                             )
                             Text("KI analysiert Foto …")
                         } else {

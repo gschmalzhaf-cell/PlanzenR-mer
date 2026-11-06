@@ -53,6 +53,6 @@ class SettingsRepository @Inject constructor(
     }
 
     companion object {
-        const val DEFAULT_MODEL = "mistral-medium-3-5"
+        const val DEFAULT_MODEL = "mistral-large-latest"
     }
 }
