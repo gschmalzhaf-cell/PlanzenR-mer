@@ -7,6 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -29,7 +30,7 @@ private fun DrawScope.leafPath(length: Float, width: Float): Path = Path().apply
 }
 
 private fun DrawScope.drawLeaf(center: Offset, length: Float, angle: Float, color: Color) {
-    translate(center) {
+    translate(center.x, center.y) {
         rotate(angle) {
             drawPath(leafPath(length, length * 0.45f), color)
         }
