@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
 
 @Serializable
@@ -76,7 +77,20 @@ data class MistralErrorBody(
     val error: MistralError? = null
 )
 
+@Serializable
+data class ModelsResponse(
+    val data: List<ModelInfo> = emptyList()
+)
+
+@Serializable
+data class ModelInfo(
+    val id: String
+)
+
 interface MistralApi {
     @POST("chat/completions")
     suspend fun chatCompletions(@Body request: ChatCompletionRequest): ChatCompletionResponse
+
+    @GET("models")
+    suspend fun models(): ModelsResponse
 }

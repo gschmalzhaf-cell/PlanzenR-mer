@@ -43,6 +43,10 @@ class PlantAiRepository @Inject constructor(
             .create(MistralApi::class.java)
     }
 
+    suspend fun loadModels(): Result<List<String>> = runCatching {
+        api.models().data.map { it.id }.sorted()
+    }
+
     suspend fun analyzePlant(base64Jpeg: String, userHint: String = ""): Result<PlantAnalysis> =
         runCatching {
             val prompt = buildString {
@@ -58,7 +62,7 @@ class PlantAiRepository @Inject constructor(
                 }
             }
             val request = ChatCompletionRequest(
-                model = MODEL,
+                model = settings.mistralModel.first(),
                 temperature = 0.2,
                 messages = listOf(
                     ChatMessage(
@@ -84,14 +88,17 @@ class PlantAiRepository @Inject constructor(
         }.recoverCatching { error ->
             if (error is HttpException) {
                 val body = error.response()?.errorBody()?.string().orEmpty()
+                if (error.code() == 404) {
+                    throw IllegalStateException(
+                        "Modell nicht gefunden (404). Bitte in den Einstellungen ein aktuelles KI-Modell wählen."
+                    )
+                }
                 throw IllegalStateException("Mistral-Fehler ${error.code()}: $body")
             }
             throw error
         }
 
     companion object {
-        const val MODEL = "pixtral-12b-latest"
-
         private const val ANALYSIS_SCHEMA = """{
             "type": "object",
             "properties": {

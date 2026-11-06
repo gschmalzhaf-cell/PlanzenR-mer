@@ -17,14 +17,29 @@ class SettingsRepository @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     private val apiKeyKey = stringPreferencesKey("mistral_api_key")
+    private val modelKey = stringPreferencesKey("mistral_model")
 
     val mistralApiKey: Flow<String> = context.dataStore.data.map { prefs ->
         prefs[apiKeyKey].orEmpty()
+    }
+
+    val mistralModel: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[modelKey] ?: DEFAULT_MODEL
     }
 
     suspend fun setMistralApiKey(key: String) {
         context.dataStore.edit { prefs ->
             prefs[apiKeyKey] = key.trim()
         }
+    }
+
+    suspend fun setMistralModel(model: String) {
+        context.dataStore.edit { prefs ->
+            prefs[modelKey] = model.trim()
+        }
+    }
+
+    companion object {
+        const val DEFAULT_MODEL = "mistral-medium-3-5"
     }
 }
