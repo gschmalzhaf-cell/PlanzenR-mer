@@ -17,6 +17,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,6 +30,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.roemerplant.app.ui.components.SectionCard
+import com.roemerplant.app.ui.theme.AppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,6 +60,18 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            SectionCard("Design") {
+                Text(
+                    "Wähle ein Farbschema – wird sofort angewendet und gespeichert.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                AppTheme.entries.forEach { theme ->
+                    RowSelect(theme.label, state.theme == theme) {
+                        viewModel.onThemeChange(theme)
+                    }
+                }
+            }
+
             SectionCard("Mistral-KI") {
                 OutlinedTextField(
                     value = state.apiKeyInput,
@@ -109,5 +123,16 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Speichern") }
         }
+    }
+}
+
+@Composable
+private fun RowSelect(label: String, selected: Boolean, onClick: () -> Unit) {
+    androidx.compose.foundation.layout.Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+    ) {
+        RadioButton(selected = selected, onClick = onClick)
+        TextButton(onClick = onClick) { Text(label) }
     }
 }

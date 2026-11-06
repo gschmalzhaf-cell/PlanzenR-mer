@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.roemerplant.app.data.ai.PlantAiRepository
 import com.roemerplant.app.data.settings.SettingsRepository
+import com.roemerplant.app.ui.theme.AppTheme
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +16,7 @@ data class SettingsUiState(
     val apiKeyInput: String = "",
     val savedKey: String = "",
     val modelInput: String = "",
+    val theme: AppTheme = AppTheme.FOREST,
     val availableModels: List<String> = emptyList(),
     val isLoadingModels: Boolean = false,
     val isSaving: Boolean = false,
@@ -34,7 +36,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val key = settings.mistralApiKey.first()
             val model = settings.mistralModel.first()
-            _state.value = _state.value.copy(apiKeyInput = key, savedKey = key, modelInput = model)
+            val theme = settings.appTheme.first()
+            _state.value = _state.value.copy(
+                apiKeyInput = key,
+                savedKey = key,
+                modelInput = model,
+                theme = theme
+            )
         }
     }
 
@@ -44,6 +52,11 @@ class SettingsViewModel @Inject constructor(
 
     fun onModelChange(value: String) {
         _state.value = _state.value.copy(modelInput = value)
+    }
+
+    fun onThemeChange(theme: AppTheme) {
+        _state.value = _state.value.copy(theme = theme)
+        viewModelScope.launch { settings.setAppTheme(theme) }
     }
 
     fun loadModels() {

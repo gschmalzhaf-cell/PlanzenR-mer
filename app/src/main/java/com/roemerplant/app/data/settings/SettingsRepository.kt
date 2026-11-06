@@ -18,6 +18,7 @@ class SettingsRepository @Inject constructor(
 ) {
     private val apiKeyKey = stringPreferencesKey("mistral_api_key")
     private val modelKey = stringPreferencesKey("mistral_model")
+    private val themeKey = stringPreferencesKey("app_theme")
 
     val mistralApiKey: Flow<String> = context.dataStore.data.map { prefs ->
         prefs[apiKeyKey].orEmpty()
@@ -36,6 +37,18 @@ class SettingsRepository @Inject constructor(
     suspend fun setMistralModel(model: String) {
         context.dataStore.edit { prefs ->
             prefs[modelKey] = model.trim()
+        }
+    }
+
+    val appTheme: Flow<com.roemerplant.app.ui.theme.AppTheme> = context.dataStore.data.map { prefs ->
+        runCatching {
+            com.roemerplant.app.ui.theme.AppTheme.valueOf(prefs[themeKey] ?: "FOREST")
+        }.getOrDefault(com.roemerplant.app.ui.theme.AppTheme.FOREST)
+    }
+
+    suspend fun setAppTheme(theme: com.roemerplant.app.ui.theme.AppTheme) {
+        context.dataStore.edit { prefs ->
+            prefs[themeKey] = theme.name
         }
     }
 

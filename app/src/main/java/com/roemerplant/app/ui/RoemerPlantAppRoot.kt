@@ -25,6 +25,7 @@ import com.roemerplant.app.ui.add.AddPlantScreen
 import com.roemerplant.app.ui.detail.PlantDetailScreen
 import com.roemerplant.app.ui.plants.PlantsScreen
 import com.roemerplant.app.ui.settings.SettingsScreen
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.roemerplant.app.ui.theme.RoemerPlantTheme
 
 object Routes {
@@ -38,8 +39,9 @@ object Routes {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RoemerPlantAppRoot() {
-    RoemerPlantTheme {
+fun RoemerPlantAppRoot(mainViewModel: MainViewModel = hiltViewModel()) {
+    val theme by mainViewModel.theme.collectAsState()
+    RoemerPlantTheme(theme = theme) {
         val navController = rememberNavController()
         val backStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = backStackEntry?.destination?.route
