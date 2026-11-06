@@ -25,11 +25,24 @@ jobs:
         with:
           gradle-version: "8.10.2"
 
-      - name: Build APK
-        run: gradle assembleDebug --stacktrace
+      - name: Decode signing keystore
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: echo "$KEYSTORE_BASE64" | base64 -d > $HOME/roemerplant.keystore
 
-      - name: Rename APK
-        run: mv app/build/outputs/apk/debug/app-debug.apk RoemerPlant-${{ github.ref_name }}.apk
+      - name: Build signed release APK
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        env:
+          KEYSTORE_FILE: $HOME/roemerplant.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: gradle assembleRelease --stacktrace && cp app/build/outputs/apk/release/app-release.apk RoemerPlant-${{ github.ref_name }}.apk
+
+      - name: Build debug APK (fallback without signing secrets)
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 == '' }}
+        run: gradle assembleDebug --stacktrace && cp app/build/outputs/apk/debug/app-debug.apk RoemerPlant-${{ github.ref_name }}.apk
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
