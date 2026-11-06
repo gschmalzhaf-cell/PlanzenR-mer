@@ -40,9 +40,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.roemerplant.app.ui.components.CareIcons
 import com.roemerplant.app.ui.components.EditableField
 import com.roemerplant.app.ui.components.InfoRow
 import com.roemerplant.app.ui.components.SectionCard
+import com.roemerplant.app.ui.components.StatusBadge
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -137,14 +139,15 @@ fun PlantDetailScreen(
                     InfoRow("Beschreibung", plant.description)
                 }
                 SectionCard("Pflege") {
-                    InfoRow("Licht", plant.careLight)
-                    InfoRow("Gießen", plant.careWater)
-                    InfoRow("Luftfeuchtigkeit", plant.careHumidity)
-                    InfoRow("Temperatur", plant.careTemperature)
-                    InfoRow("Düngen", plant.careFertilizer)
-                    InfoRow("Substrat", plant.careSoil)
+                    InfoRow("Licht", plant.careLight, CareIcons.light)
+                    InfoRow("Gießen", plant.careWater, CareIcons.water)
+                    InfoRow("Luftfeuchtigkeit", plant.careHumidity, CareIcons.humidity)
+                    InfoRow("Temperatur", plant.careTemperature, CareIcons.temperature)
+                    InfoRow("Düngen", plant.careFertilizer, CareIcons.fertilizer)
+                    InfoRow("Substrat", plant.careSoil, CareIcons.soil)
                 }
                 SectionCard("Gesundheit") {
+                    StatusBadge(plant.healthStatus)
                     InfoRow("Status", plant.healthStatus)
                     InfoRow("Analyse", plant.healthAnalysis)
                     if (plant.healthInstructions.isNotBlank()) {

@@ -3,6 +3,7 @@ package com.roemerplant.app.ui
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -65,7 +66,7 @@ fun RoemerPlantAppRoot(mainViewModel: MainViewModel = hiltViewModel()) {
             floatingActionButton = {
                 if (currentRoute == Routes.PLANTS) {
                     FloatingActionButton(onClick = { navController.navigate(Routes.ADD) }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Pflanze hinzufügen")
+                        Icon(Icons.Filled.Eco, contentDescription = "Pflanze hinzufügen")
                     }
                 }
             }

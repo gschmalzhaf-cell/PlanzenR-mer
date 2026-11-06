@@ -11,6 +11,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Eco
@@ -26,10 +31,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.roemerplant.app.data.model.Plant
+import com.roemerplant.app.ui.components.StatusBadge
 
 @Composable
 fun PlantsScreen(
@@ -40,18 +47,31 @@ fun PlantsScreen(
     val plants by viewModel.plants.collectAsState()
 
     if (plants.isEmpty()) {
+        val pulse = rememberInfiniteTransition(label = "sprout").animateFloat(
+            initialValue = 1f,
+            targetValue = 1.12f,
+            animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Reverse),
+            label = "sproutScale"
+        )
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(
                     Icons.Filled.Eco,
                     contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.outline
+                    modifier = Modifier
+                        .size(88.dp)
+                        .scale(pulse.value),
+                    tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
                     "Noch keine Pflanzen erfasst.",
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(top = 12.dp)
+                )
+                Text(
+                    "Hier könnte deine erste Pflanze wachsen.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 TextButton(onClick = onAddPlant) { Text("Erste Pflanze hinzufügen") }
             }
@@ -102,16 +122,12 @@ private fun PlantCard(plant: Plant, onClick: () -> Unit, onDelete: () -> Unit) {
                 if (plant.species.isNotBlank()) {
                     Text(plant.species, style = MaterialTheme.typography.bodySmall)
                 }
-                if (plant.healthStatus.isNotBlank()) {
-                    Text(
-                        "Gesundheit: ${plant.healthStatus}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
             }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Filled.Delete, contentDescription = "Löschen")
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatusBadge(plant.healthStatus)
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Filled.Delete, contentDescription = "Löschen")
+                }
             }
         }
     }
