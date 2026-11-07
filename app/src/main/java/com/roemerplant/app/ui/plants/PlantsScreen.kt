@@ -35,21 +35,15 @@ import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.LocalFlorist
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -71,9 +65,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
@@ -89,7 +80,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private const val DAY_MS = 24L * 60 * 60 * 1000
 
 @Composable
 fun PlantsScreen(
@@ -101,9 +91,6 @@ fun PlantsScreen(
     viewModel: PlantsViewModel = hiltViewModel()
 ) {
     val plants by viewModel.plants.collectAsState()
-    val dailyCare by viewModel.dailyCare.collectAsState()
-    val context = LocalContext.current
-    val haptics = LocalHapticFeedback.current
     var query by remember { mutableStateOf("") }
     var sortByName by remember { mutableStateOf(true) }
 
@@ -145,7 +132,7 @@ fun PlantsScreen(
                     }
                 }
             } else {
-            item(key = "greeting") { GreetingBanner(plantCount = plants.size, careCount = dailyCare.size) }
+            item(key = "greeting") { GreetingBanner(plantCount = plants.size) }
             item(key = "search") {
                 LeafSearchBar(
                     query = query,
@@ -155,26 +142,6 @@ fun PlantsScreen(
             }
             item(key = "quickactions") {
                 QuickActionRow(
-                    onWater = {
-                        val due = dailyCare.filter { it.waterDue }
-                        if (due.isEmpty()) {
-                            android.widget.Toast.makeText(context, "Alle Pflanzen sind gesättigt \uD83C\uDF3F", android.widget.Toast.LENGTH_SHORT).show()
-                        } else {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            due.forEach { viewModel.markWatered(it.plant) }
-                            android.widget.Toast.makeText(context, "${due.size} Pflanze(n) gegossen \uD83D\uDCA7", android.widget.Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    onFertilize = {
-                        val due = dailyCare.filter { it.fertilizeDue }
-                        if (due.isEmpty()) {
-                            android.widget.Toast.makeText(context, "Keine Düngung nötig \uD83C\uDF31", android.widget.Toast.LENGTH_SHORT).show()
-                        } else {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            due.forEach { viewModel.markFertilized(it.plant) }
-                            android.widget.Toast.makeText(context, "${due.size} Pflanze(n) gedüngt \uD83E\uDDEA", android.widget.Toast.LENGTH_SHORT).show()
-                        }
-                    },
                     onCamera = onAddPlant,
                     onIdentify = onAddPlant
                 )
@@ -187,14 +154,8 @@ fun PlantsScreen(
                 item(key = "carousel") {
                     PlantCarouselSection(
                         plants = filtered,
-                        careItems = dailyCare,
                         onOpenPlant = onOpenPlant,
-                        onOpenCollection = onOpenCollection,
-                        onWater = { plant ->
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            viewModel.markWatered(plant)
-                            android.widget.Toast.makeText(context, "${plant.name} gegossen \uD83D\uDCA7", android.widget.Toast.LENGTH_SHORT).show()
-                        }
+                        onOpenCollection = onOpenCollection
                     )
                 }
                 item(key = "caretip") { CareTipCard() }
@@ -282,7 +243,7 @@ private fun HomeTopBar(onOpenSettings: () -> Unit) {
 }
 
 @Composable
-private fun GreetingBanner(plantCount: Int, careCount: Int) {
+private fun GreetingBanner(plantCount: Int) {
     val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
     val (greeting, mood) = when {
         hour < 5 -> "Gute Nacht" to "Selbst Moonflowers schlafen jetzt."
@@ -316,8 +277,7 @@ private fun GreetingBanner(plantCount: Int, careCount: Int) {
             modifier = Modifier.padding(top = 2.dp)
         )
         Text(
-            "$mood · $plantCount Exemplare in deinem Herbarium" +
-                (if (careCount > 0) " · $careCount warten auf Zuwendung" else " · alles versorgt"),
+            "$mood · $plantCount Exemplare in deinem Herbarium",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 2.dp)
@@ -397,18 +357,14 @@ private fun LeafSearchBar(
 
 @Composable
 private fun QuickActionRow(
-    onWater: () -> Unit,
-    onFertilize: () -> Unit,
     onCamera: () -> Unit,
     onIdentify: () -> Unit
 ) {
     val actions = listOf(
-        Triple(Icons.Filled.WaterDrop, "Gießen", MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) to MaterialTheme.colorScheme.primary),
-        Triple(Icons.Filled.Science, "Düngen", MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f) to MaterialTheme.colorScheme.secondary),
         Triple(Icons.Filled.PhotoCamera, "Kamera", MaterialTheme.colorScheme.surfaceContainerHigh to MaterialTheme.colorScheme.primary),
         Triple(Icons.Filled.TravelExplore, "Bestimmen", MaterialTheme.colorScheme.tertiary.copy(alpha = 0.12f) to MaterialTheme.colorScheme.tertiary)
     )
-    val handlers = listOf(onWater, onFertilize, onCamera, onIdentify)
+    val handlers = listOf(onCamera, onIdentify)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -483,10 +439,8 @@ private fun WavyDivider(color: Color) {
 @Composable
 private fun PlantCarouselSection(
     plants: List<Plant>,
-    careItems: List<DailyCareItem>,
     onOpenPlant: (Long) -> Unit,
-    onOpenCollection: () -> Unit,
-    onWater: (Plant) -> Unit
+    onOpenCollection: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -512,7 +466,7 @@ private fun PlantCarouselSection(
                     Text("Meine Pflanzen", style = MaterialTheme.typography.titleMedium)
                 }
                 Text(
-                    if (careItems.isEmpty()) "Alles bestens versorgt" else "${careItems.size} Pflegeaufgaben heute fällig",
+                    "${plants.size} grüne Schätze in deinem Garten",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -548,9 +502,7 @@ private fun PlantCarouselSection(
             items(plants, key = { it.id }) { plant ->
                 PlantCarouselCard(
                     plant = plant,
-                    care = careItems.firstOrNull { it.plant.id == plant.id },
-                    onClick = { onOpenPlant(plant.id) },
-                    onWater = { onWater(plant) }
+                    onClick = { onOpenPlant(plant.id) }
                 )
             }
         }
@@ -560,18 +512,9 @@ private fun PlantCarouselSection(
 @Composable
 private fun PlantCarouselCard(
     plant: Plant,
-    care: DailyCareItem?,
-    onClick: () -> Unit,
-    onWater: () -> Unit
+    onClick: () -> Unit
 ) {
     val cardShape = RoundedCornerShape(24.dp)
-    val waterDue = care?.waterDue == true
-    val fertilizeDue = care?.fertilizeDue == true
-    val elapsedFraction = remember(plant) {
-        val last = plant.lastWateredAt
-        if (last == null || plant.waterIntervalDays <= 0) 1f
-        else (((System.currentTimeMillis() - last) / DAY_MS).toFloat() / plant.waterIntervalDays).coerceIn(0f, 1f)
-    }
     Surface(
         onClick = onClick,
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
@@ -611,9 +554,7 @@ private fun PlantCarouselCard(
                     }
                 }
                 Surface(
-                    color = if (waterDue) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f)
-                    else if (fertilizeDue) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.12f)
-                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     shape = RoundedCornerShape(50),
                     modifier = Modifier
                         .padding(10.dp)
@@ -624,22 +565,16 @@ private fun PlantCarouselCard(
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                     ) {
                         Icon(
-                            if (waterDue) Icons.Filled.WaterDrop else Icons.Filled.Done,
+                            Icons.Filled.Eco,
                             contentDescription = null,
-                            tint = if (waterDue) MaterialTheme.colorScheme.onSecondaryContainer
-                            else MaterialTheme.colorScheme.primary,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(12.dp)
                         )
                         Text(
-                            when {
-                                waterDue -> "Heute durstig!"
-                                fertilizeDue -> "Düngen fällig"
-                                else -> "Gut versorgt"
-                            },
+                            plant.healthStatus.ifBlank { "Munter & vital" },
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (waterDue) MaterialTheme.colorScheme.onSecondaryContainer
-                            else MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -668,65 +603,8 @@ private fun PlantCarouselCard(
                     plant.species,
                     style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
                     color = MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.padding(top = 2.dp, bottom = 10.dp)
+                    modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)
                 )
-            } else {
-                Spacer(Modifier.height(12.dp))
-            }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(elapsedFraction)
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(
-                            if (waterDue) MaterialTheme.colorScheme.secondaryContainer
-                            else MaterialTheme.colorScheme.primaryContainer
-                        )
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(
-                        Icons.Filled.Schedule,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.size(12.dp)
-                    )
-                    Text(
-                        if (waterDue) "Jetzt gießen" else "In ${plant.waterIntervalDays - ((System.currentTimeMillis() - (plant.lastWateredAt ?: System.currentTimeMillis())) / DAY_MS).coerceAtLeast(0)} Tagen",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Button(
-                    onClick = onWater,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (waterDue) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.surfaceContainerHigh,
-                        contentColor = if (waterDue) MaterialTheme.colorScheme.onPrimary
-                        else MaterialTheme.colorScheme.onSurface
-                    ),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                    modifier = Modifier.height(32.dp)
-                ) {
-                    Text(
-                        if (waterDue) "Gegossen!" else "Details",
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
             }
         }
     }

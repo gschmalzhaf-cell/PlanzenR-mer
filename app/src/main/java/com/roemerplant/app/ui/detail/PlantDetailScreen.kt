@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.LocalFlorist
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material.icons.filled.WaterDrop
@@ -40,7 +39,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,16 +51,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import android.net.Uri
-import android.widget.Toast
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontFamily
 import com.roemerplant.app.ui.components.EditableField
@@ -82,8 +77,6 @@ fun PlantDetailScreen(
     val state by viewModel.state.collectAsState()
     val apiKeyConfigured by viewModel.apiKeyConfigured.collectAsState()
     val plant = state.plant
-    val context = LocalContext.current
-    val haptics = LocalHapticFeedback.current
 
     var cameraUri by remember { mutableStateOf<Uri?>(null) }
     val takePicture = rememberLauncherForActivityResult(
@@ -161,45 +154,12 @@ fun PlantDetailScreen(
                         plant = plant,
                         apiKeyConfigured = apiKeyConfigured,
                         isAnalyzing = state.isAnalyzing,
-                        onAnalyze = viewModel::analyzeHealth,
-                        onWater = {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            viewModel.updatePlant { it.copy(lastWateredAt = System.currentTimeMillis()) }
-                            Toast.makeText(context, "${plant.name} gegossen \uD83D\uDCA7", Toast.LENGTH_SHORT).show()
-                        },
-                        onFertilize = {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                            viewModel.updatePlant { it.copy(lastFertilizedAt = System.currentTimeMillis()) }
-                            Toast.makeText(context, "${plant.name} gedüngt \uD83E\uDDEA", Toast.LENGTH_SHORT).show()
-                        }
+                        onAnalyze = viewModel::analyzeHealth
                     )
                 }
             }
         }
 
-        Surface(
-            onClick = {
-                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                viewModel.updatePlant { it.copy(lastWateredAt = System.currentTimeMillis()) }
-                Toast.makeText(context, "${plant.name} gegossen \uD83D\uDCA7", Toast.LENGTH_SHORT).show()
-            },
-            color = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            shape = RoundedCornerShape(50),
-            shadowElevation = 8.dp,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 24.dp, bottom = 24.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp)
-            ) {
-                Icon(Icons.Filled.WaterDrop, contentDescription = null)
-                Text("Gießen", style = MaterialTheme.typography.labelLarge)
-            }
-        }
     }
 }
 
@@ -728,9 +688,7 @@ private fun ActionRow(
     plant: com.roemerplant.app.data.model.Plant,
     apiKeyConfigured: Boolean,
     isAnalyzing: Boolean,
-    onAnalyze: () -> Unit,
-    onWater: () -> Unit,
-    onFertilize: () -> Unit
+    onAnalyze: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         if (plant.photoUri != null && apiKeyConfigured) {
@@ -757,25 +715,8 @@ private fun ActionRow(
                 }
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedButton(
-                onClick = onWater,
-                shape = RoundedCornerShape(50),
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(Icons.Filled.WaterDrop, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text("Gegossen", modifier = Modifier.padding(start = 8.dp))
-            }
-            OutlinedButton(
-                onClick = onFertilize,
-                shape = RoundedCornerShape(50),
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(Icons.Filled.Science, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
-                Text("Gedüngt", modifier = Modifier.padding(start = 8.dp))
-            }
-        }
     }
+  }
 }
 
 @Composable
