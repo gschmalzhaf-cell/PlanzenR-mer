@@ -15,8 +15,8 @@ android {
         applicationId = "com.roemerplant.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "2.5.0"
+        versionCode = 6
+        versionName = "2.6.0"
     }
 
     signingConfigs {
@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.compose.ui.graphics)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
+    implementation(libs.compose.ui.text.google.fonts)
     implementation(libs.compose.material.icons.extended)
     debugImplementation(libs.compose.ui.tooling)
 
