@@ -4,7 +4,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
-enum class AppTheme(val label: String) {
+enum class AppTheme(val label: String, val swatch: Long) {
     HERBARIUM("Herbarium", 0xFF7A9B6D),
     FOREST("Waldgrün", 0xFF2E7D32),
     BLOSSOM("Blütenrosa", 0xFF9C4351),
