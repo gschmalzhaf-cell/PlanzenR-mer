@@ -48,6 +48,7 @@ import com.roemerplant.app.ui.theme.RoemerPlantTheme
 
 object Routes {
     const val PLANTS = "plants"
+    const val HERBARIUM = "herbarium"
     const val ADD = "add"
     const val SETTINGS = "settings"
     const val TIPS = "tips"
@@ -65,13 +66,13 @@ private data class BottomNavItem(
 
 private val bottomNavItems = listOf(
     BottomNavItem(Routes.PLANTS, "Garten", Icons.Filled.Eco),
-    BottomNavItem(Routes.PLANTS, "Herbarium", Icons.Filled.LocalFlorist),
+    BottomNavItem(Routes.HERBARIUM, "Herbarium", Icons.Filled.LocalFlorist),
     BottomNavItem(Routes.ADD, "Kamera", Icons.Filled.PhotoCamera, center = true),
     BottomNavItem(Routes.TIPS, "Pflegetipps", Icons.Filled.Spa),
     BottomNavItem(Routes.SETTINGS, "Profil", Icons.Filled.Person)
 )
 
-private val topLevelRoutes = setOf(Routes.PLANTS, Routes.ADD, Routes.TIPS, Routes.SETTINGS)
+private val topLevelRoutes = setOf(Routes.PLANTS, Routes.HERBARIUM, Routes.ADD, Routes.TIPS, Routes.SETTINGS)
 
 @Composable
 fun RoemerPlantAppRoot(mainViewModel: MainViewModel = hiltViewModel()) {
@@ -105,7 +106,16 @@ fun RoemerPlantAppRoot(mainViewModel: MainViewModel = hiltViewModel()) {
                     PlantsScreen(
                         onAddPlant = { navController.navigate(Routes.ADD) },
                         onOpenPlant = { id -> navController.navigate(Routes.plantDetail(id)) },
-                        onOpenSettings = { navController.navigate(Routes.SETTINGS) }
+                        onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                        onOpenCollection = { navController.navigate(Routes.HERBARIUM) }
+                    )
+                }
+                composable(Routes.HERBARIUM) {
+                    PlantsScreen(
+                        onAddPlant = { navController.navigate(Routes.ADD) },
+                        onOpenPlant = { id -> navController.navigate(Routes.plantDetail(id)) },
+                        onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                        collectionOnly = true
                     )
                 }
                 composable(Routes.ADD) {
@@ -156,8 +166,7 @@ private fun BottomNavBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             bottomNavItems.forEach { item ->
-                val active = currentRoute == item.route &&
-                    (item.route != Routes.PLANTS || item.label == "Garten")
+                val active = currentRoute == item.route
                 if (item.center) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,

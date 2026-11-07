@@ -96,6 +96,8 @@ fun PlantsScreen(
     onAddPlant: () -> Unit,
     onOpenPlant: (Long) -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenCollection: () -> Unit = {},
+    collectionOnly: Boolean = false,
     viewModel: PlantsViewModel = hiltViewModel()
 ) {
     val plants by viewModel.plants.collectAsState()
@@ -123,6 +125,26 @@ fun PlantsScreen(
             item(key = "topbar") {
                 HomeTopBar(onOpenSettings = onOpenSettings)
             }
+            if (collectionOnly) {
+                item(key = "search") {
+                    LeafSearchBar(
+                        query = query,
+                        onQueryChange = { query = it },
+                        onToggleSort = { sortByName = !sortByName }
+                    )
+                }
+                if (plants.isEmpty()) {
+                    item(key = "empty") { EmptyHerbarium(onAddPlant = onAddPlant) }
+                } else {
+                    item(key = "sammlung") {
+                        HerbariumSection(
+                            plants = filtered,
+                            onOpenPlant = onOpenPlant,
+                            onAddPlant = onAddPlant
+                        )
+                    }
+                }
+            } else {
             item(key = "greeting") { GreetingBanner(plantCount = plants.size, careCount = dailyCare.size) }
             item(key = "search") {
                 LeafSearchBar(
@@ -167,6 +189,7 @@ fun PlantsScreen(
                         plants = filtered,
                         careItems = dailyCare,
                         onOpenPlant = onOpenPlant,
+                        onOpenCollection = onOpenCollection,
                         onWater = { plant ->
                             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                             viewModel.markWatered(plant)
@@ -182,6 +205,7 @@ fun PlantsScreen(
                         onAddPlant = onAddPlant
                     )
                 }
+            }
             }
         }
     }
@@ -461,6 +485,7 @@ private fun PlantCarouselSection(
     plants: List<Plant>,
     careItems: List<DailyCareItem>,
     onOpenPlant: (Long) -> Unit,
+    onOpenCollection: () -> Unit,
     onWater: (Plant) -> Unit
 ) {
     Column(
@@ -493,7 +518,7 @@ private fun PlantCarouselSection(
                 )
             }
             Surface(
-                onClick = { },
+                onClick = onOpenCollection,
                 color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(50),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
