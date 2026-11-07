@@ -59,6 +59,11 @@ class PlantDetailViewModel @Inject constructor(
         _state.value = _state.value.copy(isEditing = editing)
     }
 
+    fun delete() {
+        val current = _state.value.plant ?: return
+        viewModelScope.launch { repository.delete(current) }
+    }
+
     fun createCameraCaptureUri(): Uri = imageHandler.createCameraCaptureUri()
 
     fun onPhotoPicked(uri: Uri) {

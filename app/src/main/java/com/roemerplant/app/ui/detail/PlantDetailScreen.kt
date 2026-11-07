@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.WaterDrop
@@ -95,6 +96,12 @@ fun PlantDetailScreen(
                 actions = {
                     IconButton(onClick = { viewModel.setEditing(!state.isEditing) }) {
                         Icon(Icons.Filled.Edit, contentDescription = "Bearbeiten")
+                    }
+                    IconButton(onClick = {
+                        viewModel.delete()
+                        onBack()
+                    }) {
+                        Icon(Icons.Filled.Delete, contentDescription = "Löschen")
                     }
                 }
             )

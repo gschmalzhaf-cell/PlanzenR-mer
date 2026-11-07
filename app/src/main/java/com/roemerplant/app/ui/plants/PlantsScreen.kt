@@ -1,195 +1,186 @@
 package com.roemerplant.app.ui.plants
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Eco
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.LocalFlorist
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Science
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Spa
+import androidx.compose.material.icons.filled.TravelExplore
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material3.Card
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import android.widget.Toast
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.roemerplant.app.data.model.Plant
 import com.roemerplant.app.ui.components.LeafPattern
-import com.roemerplant.app.ui.components.RefStamp
 import com.roemerplant.app.ui.components.WashiTape
-import com.roemerplant.app.ui.components.StatusBadge
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+private const val DAY_MS = 24L * 60 * 60 * 1000
 
 @Composable
 fun PlantsScreen(
     onAddPlant: () -> Unit,
     onOpenPlant: (Long) -> Unit,
+    onOpenSettings: () -> Unit,
     viewModel: PlantsViewModel = hiltViewModel()
 ) {
     val plants by viewModel.plants.collectAsState()
     val dailyCare by viewModel.dailyCare.collectAsState()
     val context = LocalContext.current
     val haptics = LocalHapticFeedback.current
+    var query by remember { mutableStateOf("") }
+    var sortByName by remember { mutableStateOf(true) }
 
-    if (plants.isEmpty()) {
-        val pulse = rememberInfiniteTransition(label = "sprout").animateFloat(
-            initialValue = 1f,
-            targetValue = 1.12f,
-            animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Reverse),
-            label = "sproutScale"
-        )
-        val sway = rememberInfiniteTransition(label = "sway").animateFloat(
-            initialValue = -6f,
-            targetValue = 6f,
-            animationSpec = infiniteRepeatable(tween(2200), RepeatMode.Reverse),
-            label = "swayAngle"
-        )
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    Icons.Filled.Eco,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(88.dp)
-                        .graphicsLayer {
-                            rotationZ = sway.value
-                            scaleX = pulse.value
-                            scaleY = pulse.value
-                        },
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    "Noch keine Pflanzen erfasst.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(top = 12.dp)
-                )
-                Text(
-                    "Dein Herbarium liegt noch brach \u2013",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    "pflanze deine erste grüne Schätzling!",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = FontFamily.Serif,
-                        fontStyle = FontStyle.Italic
-                    ),
-                    color = MaterialTheme.colorScheme.primary
-                )
-                TextButton(onClick = onAddPlant) { Text("Erste Pflanze hinzufügen") }
-            }
+    val filtered = remember(plants, query, sortByName) {
+        val byQuery = if (query.isBlank()) plants else plants.filter {
+            it.name.contains(query, ignoreCase = true) ||
+                it.species.contains(query, ignoreCase = true)
         }
-    } else {
-        Box(modifier = Modifier.fillMaxSize()) {
-            LeafPattern(modifier = Modifier.fillMaxSize())
-        }
+        if (sortByName) byQuery.sortedBy { it.name.lowercase() } else byQuery.sortedByDescending { it.createdAt }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        LeafPattern(modifier = Modifier.fillMaxSize())
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            contentPadding = PaddingValues(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            item(key = "greeting") {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-                    val greeting = when {
-                        hour < 5 -> "Gute Nacht"
-                        hour < 11 -> "Guten Morgen"
-                        hour < 18 -> "Schönen Tag"
-                        else -> "Guten Abend"
-                    }
-                    Text(
-                        "$greeting, Gärtner!",
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                    Text(
-                        "${plants.size} Exemplare in deinem Herbarium" +
-                            (if (dailyCare.isNotEmpty()) " \u00b7 ${dailyCare.size} warten auf Zuwendung" else " \u00b7 alles versorgt"),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+            item(key = "topbar") {
+                HomeTopBar(onOpenSettings = onOpenSettings)
             }
-            if (dailyCare.isNotEmpty()) {
-                item(key = "curator") {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Tages-Kuratel", style = MaterialTheme.typography.titleLarge)
-                        Text(
-                            "Pflegeschritte, die deine Zuwendung verlangen",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        dailyCare.forEach { item ->
-                            DailyCareCard(
-                                item = item,
-                                onWater = {
-                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    viewModel.markWatered(item.plant)
-                                    Toast.makeText(context, "${item.plant.name} gegossen", Toast.LENGTH_SHORT).show()
-                                },
-                                onFertilize = {
-                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    viewModel.markFertilized(item.plant)
-                                    Toast.makeText(context, "${item.plant.name} gedüngt", Toast.LENGTH_SHORT).show()
-                                },
-                                onOpen = { onOpenPlant(item.plant.id) }
-                            )
-                        }
-                    }
-                }
+            item(key = "greeting") { GreetingBanner(plantCount = plants.size, careCount = dailyCare.size) }
+            item(key = "search") {
+                LeafSearchBar(
+                    query = query,
+                    onQueryChange = { query = it },
+                    onToggleSort = { sortByName = !sortByName }
+                )
             }
-            items(plants, key = { it.id }) { plant ->
-                Box(modifier = Modifier.animateItem()) {
-                PlantCard(
-                    plant = plant,
-                    onClick = { onOpenPlant(plant.id) },
-                    onDelete = { viewModel.delete(plant) },
+            item(key = "quickactions") {
+                QuickActionRow(
                     onWater = {
-                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.markWatered(plant)
-                        Toast.makeText(context, "${plant.name} gegossen", Toast.LENGTH_SHORT).show()
+                        val due = dailyCare.filter { it.waterDue }
+                        if (due.isEmpty()) {
+                            android.widget.Toast.makeText(context, "Alle Pflanzen sind gesättigt \uD83C\uDF3F", android.widget.Toast.LENGTH_SHORT).show()
+                        } else {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            due.forEach { viewModel.markWatered(it.plant) }
+                            android.widget.Toast.makeText(context, "${due.size} Pflanze(n) gegossen \uD83D\uDCA7", android.widget.Toast.LENGTH_SHORT).show()
+                        }
                     },
                     onFertilize = {
-                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.markFertilized(plant)
-                        Toast.makeText(context, "${plant.name} gedüngt", Toast.LENGTH_SHORT).show()
-                    }
+                        val due = dailyCare.filter { it.fertilizeDue }
+                        if (due.isEmpty()) {
+                            android.widget.Toast.makeText(context, "Keine Düngung nötig \uD83C\uDF31", android.widget.Toast.LENGTH_SHORT).show()
+                        } else {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            due.forEach { viewModel.markFertilized(it.plant) }
+                            android.widget.Toast.makeText(context, "${due.size} Pflanze(n) gedüngt \uD83E\uDDEA", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    onCamera = onAddPlant,
+                    onIdentify = onAddPlant
                 )
+            }
+            item(key = "wave1") { WavyDivider(color = MaterialTheme.colorScheme.surfaceContainerLow) }
+
+            if (plants.isEmpty()) {
+                item(key = "empty") { EmptyHerbarium(onAddPlant = onAddPlant) }
+            } else {
+                item(key = "carousel") {
+                    PlantCarouselSection(
+                        plants = filtered,
+                        careItems = dailyCare,
+                        onOpenPlant = onOpenPlant,
+                        onWater = { plant ->
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            viewModel.markWatered(plant)
+                            android.widget.Toast.makeText(context, "${plant.name} gegossen \uD83D\uDCA7", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                }
+                item(key = "caretip") { CareTipCard() }
+                item(key = "sammlung") {
+                    HerbariumSection(
+                        plants = filtered,
+                        onOpenPlant = onOpenPlant,
+                        onAddPlant = onAddPlant
+                    )
                 }
             }
         }
@@ -197,196 +188,851 @@ fun PlantsScreen(
 }
 
 @Composable
-private fun PlantCard(
-    plant: Plant,
-    onClick: () -> Unit,
-    onDelete: () -> Unit,
-    onWater: () -> Unit,
-    onFertilize: () -> Unit
+private fun HomeTopBar(onOpenSettings: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Box {
+            Surface(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                shape = CircleShape,
+                border = BorderStroke(2.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)),
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(
+                    Icons.Filled.Eco,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(9.dp)
+                )
+            }
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = CircleShape,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(16.dp)
+            ) {
+                Icon(
+                    Icons.Filled.Eco,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.padding(2.dp)
+                )
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(
+                Icons.Filled.LocalFlorist,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                "PflanzenR",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+        Box {
+            IconButton(onClick = onOpenSettings) {
+                Icon(
+                    Icons.Filled.Notifications,
+                    contentDescription = "Benachrichtigungen",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 10.dp, end = 12.dp)
+                    .size(10.dp)
+                    .background(MaterialTheme.colorScheme.secondary, CircleShape)
+                    .border(2.dp, MaterialTheme.colorScheme.surface, CircleShape)
+            )
+        }
+    }
+}
+
+@Composable
+private fun GreetingBanner(plantCount: Int, careCount: Int) {
+    val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
+    val (greeting, mood) = when {
+        hour < 5 -> "Gute Nacht" to "Selbst Moonflowers schlafen jetzt."
+        hour < 11 -> "Guten Morgen" to "Heute ist ein herrlicher Tag zum Blühen."
+        hour < 18 -> "Schönen Tag" to "Die Sonne küsst deine Blätter."
+        else -> "Guten Abend" to "Zeit, die Blätter zur Ruhe zu betten."
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Icon(
+                Icons.Filled.Spa,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(14.dp)
+            )
+            Text(
+                "Herbar-Tagebuch & Begleiter",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        Text(
+            "$greeting, Pflanzenfreund \uD83C\uDF3F",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 2.dp)
+        )
+        Text(
+            "$mood · $plantCount Exemplare in deinem Herbarium" +
+                (if (careCount > 0) " · $careCount warten auf Zuwendung" else " · alles versorgt"),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 2.dp)
+        )
+    }
+}
+
+@Composable
+private fun LeafSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onToggleSort: () -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val cardScale by animateFloatAsState(
-        targetValue = if (pressed) 0.97f else 1f,
-        label = "cardScale"
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = RoundedCornerShape(topStart = 24.dp, bottomEnd = 24.dp, topEnd = 12.dp, bottomStart = 12.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+            modifier = Modifier.weight(1f)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+            ) {
+                Icon(
+                    Icons.Filled.Search,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.outline
+                )
+                BasicTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        fontFamily = FontFamily.SansSerif,
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 10.dp, vertical = 12.dp),
+                    decorationBox = { innerTextField ->
+                        if (query.isEmpty()) {
+                            Text(
+                                "Finde Pflanzen, Herbarium-Karten...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                        innerTextField()
+                    }
+                )
+            }
+        }
+        Surface(
+            onClick = onToggleSort,
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            shape = RoundedCornerShape(topStart = 16.dp, bottomEnd = 16.dp, topEnd = 8.dp, bottomStart = 8.dp),
+            modifier = Modifier.size(48.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    Icons.Filled.Tune,
+                    contentDescription = "Sortierung wechseln",
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuickActionRow(
+    onWater: () -> Unit,
+    onFertilize: () -> Unit,
+    onCamera: () -> Unit,
+    onIdentify: () -> Unit
+) {
+    val actions = listOf(
+        Triple(Icons.Filled.WaterDrop, "Gießen", MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) to MaterialTheme.colorScheme.primary),
+        Triple(Icons.Filled.Science, "Düngen", MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f) to MaterialTheme.colorScheme.secondary),
+        Triple(Icons.Filled.PhotoCamera, "Kamera", MaterialTheme.colorScheme.surfaceContainerHigh to MaterialTheme.colorScheme.primary),
+        Triple(Icons.Filled.TravelExplore, "Bestimmen", MaterialTheme.colorScheme.tertiary.copy(alpha = 0.12f) to MaterialTheme.colorScheme.tertiary)
     )
-    Box(modifier = Modifier.fillMaxWidth()) {
-        Card(
-            onClick = onClick,
-            interactionSource = interactionSource,
+    val handlers = listOf(onWater, onFertilize, onCamera, onIdentify)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        actions.forEachIndexed { index, (icon, label, colors) ->
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .width(72.dp)
+                    .padding(2.dp)
+            ) {
+                val interactionSource = remember { MutableInteractionSource() }
+                val pressed by interactionSource.collectIsPressedAsState()
+                val scale by animateFloatAsState(if (pressed) 0.92f else 1f, label = "actionScale")
+                Surface(
+                    onClick = handlers[index],
+                    color = colors.first,
+                    shape = RoundedCornerShape(16.dp),
+                    border = if (index == 2) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)) else null,
+                    interactionSource = interactionSource,
+                    modifier = Modifier
+                        .size(56.dp)
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                        }
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(icon, contentDescription = label, tint = colors.second, modifier = Modifier.size(24.dp))
+                    }
+                }
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WavyDivider(color: Color) {
+    Canvas(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(16.dp)
+    ) {
+        val path = Path().apply {
+            moveTo(0f, size.height * 0.5f)
+            cubicTo(
+                size.width * 0.25f, size.height,
+                size.width * 0.375f, 0f,
+                size.width * 0.625f, size.height * 0.5f
+            )
+            cubicTo(
+                size.width * 0.875f, size.height,
+                size.width, size.height * 0.4f,
+                size.width, size.height * 0.4f
+            )
+            lineTo(size.width, size.height)
+            lineTo(0f, size.height)
+            close()
+        }
+        drawPath(path, color)
+    }
+}
+
+@Composable
+private fun PlantCarouselSection(
+    plants: List<Plant>,
+    careItems: List<DailyCareItem>,
+    onOpenPlant: (Long) -> Unit,
+    onWater: (Plant) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .padding(vertical = 12.dp)
+    ) {
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .graphicsLayer {
-                    scaleX = cardScale
-                    scaleY = cardScale
-                }
+                .padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Icon(
+                        Icons.Filled.Eco,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text("Meine Pflanzen", style = MaterialTheme.typography.titleMedium)
+                }
+                Text(
+                    if (careItems.isEmpty()) "Alles bestens versorgt" else "${careItems.size} Pflegeaufgaben heute fällig",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Surface(
+                onClick = { },
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(50),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        "Alle ansehen (${plants.size})",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Icon(
+                        Icons.Filled.ArrowForward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
+        }
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            items(plants, key = { it.id }) { plant ->
+                PlantCarouselCard(
+                    plant = plant,
+                    care = careItems.firstOrNull { it.plant.id == plant.id },
+                    onClick = { onOpenPlant(plant.id) },
+                    onWater = { onWater(plant) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlantCarouselCard(
+    plant: Plant,
+    care: DailyCareItem?,
+    onClick: () -> Unit,
+    onWater: () -> Unit
+) {
+    val cardShape = RoundedCornerShape(24.dp)
+    val waterDue = care?.waterDue == true
+    val fertilizeDue = care?.fertilizeDue == true
+    val elapsedFraction = remember(plant) {
+        val last = plant.lastWateredAt
+        if (last == null || plant.waterIntervalDays <= 0) 1f
+        else (((System.currentTimeMillis() - last) / DAY_MS).toFloat() / plant.waterIntervalDays).coerceIn(0f, 1f)
+    }
+    Surface(
+        onClick = onClick,
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        shape = cardShape,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+        shadowElevation = 6.dp,
+        modifier = Modifier.width(256.dp)
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(176.dp)
+                    .clip(RoundedCornerShape(16.dp))
+            ) {
+                if (plant.photoUri != null) {
+                    AsyncImage(
+                        model = plant.photoUri,
+                        contentDescription = null,
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                Icons.Filled.Eco,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                modifier = Modifier.size(56.dp)
+                            )
+                        }
+                    }
+                }
+                Surface(
+                    color = if (waterDue) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.9f)
+                    else if (fertilizeDue) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.12f)
+                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    shape = RoundedCornerShape(50),
+                    modifier = Modifier
+                        .padding(10.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                    ) {
+                        Icon(
+                            if (waterDue) Icons.Filled.WaterDrop else Icons.Filled.Done,
+                            contentDescription = null,
+                            tint = if (waterDue) MaterialTheme.colorScheme.onSecondaryContainer
+                            else MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Text(
+                            when {
+                                waterDue -> "Heute durstig!"
+                                fertilizeDue -> "Düngen fällig"
+                                else -> "Gut versorgt"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (waterDue) MaterialTheme.colorScheme.onSecondaryContainer
+                            else MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    plant.name.ifBlank { "Ohne Namen" },
+                    style = MaterialTheme.typography.titleSmall
+                )
+                Text(
+                    plant.healthStatus.ifBlank { "Munter & vital" },
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1
+                )
+            }
+            if (plant.species.isNotBlank()) {
+                Text(
+                    plant.species,
+                    style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
+                    color = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.padding(top = 2.dp, bottom = 10.dp)
+                )
+            } else {
+                Spacer(Modifier.height(12.dp))
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(elapsedFraction)
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(
+                            if (waterDue) MaterialTheme.colorScheme.secondaryContainer
+                            else MaterialTheme.colorScheme.primaryContainer
+                        )
+                )
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Icon(
+                        Icons.Filled.Schedule,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Text(
+                        if (waterDue) "Jetzt gießen" else "In ${plant.waterIntervalDays - ((System.currentTimeMillis() - (plant.lastWateredAt ?: System.currentTimeMillis())) / DAY_MS).coerceAtLeast(0)} Tagen",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Button(
+                    onClick = onWater,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (waterDue) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.surfaceContainerHigh,
+                        contentColor = if (waterDue) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurface
+                    ),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Text(
+                        if (waterDue) "Gegossen!" else "Details",
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CareTipCard() {
+    Surface(
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 16.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .background(
+                    Brush.linearGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                            MaterialTheme.colorScheme.surfaceContainerLow,
+                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.08f)
+                        )
+                    )
+                )
+                .padding(16.dp)
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Filled.Lightbulb,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            "HEUTIGER PFLEGETIPP",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Surface(
+                            color = MaterialTheme.colorScheme.surface,
+                            shape = RoundedCornerShape(50),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                        ) {
+                            Text(
+                                "Morgenlicht",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                    Text(
+                        "Blätter sanft abstauben",
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                    Text(
+                        "Eine zarte Dusche oder feuchtes Tuch befreit Monstera & Calathea von Staub für optimale Photosynthese.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HerbariumSection(
+    plants: List<Plant>,
+    onOpenPlant: (Long) -> Unit,
+    onAddPlant: () -> Unit
+) {
+    val dateFormat = remember { SimpleDateFormat("dd. MMM", Locale.GERMANY) }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Icon(
+                    Icons.Filled.LocalFlorist,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.size(22.dp)
+                )
+                Text("Herbarium Sammlung", style = MaterialTheme.typography.titleMedium)
+            }
+            Text(
+                "Gepresste Schätze & botanische Funde",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        plants.chunked(2).forEach { rowPlants ->
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                rowPlants.forEach { plant ->
+                    SpecimenCard(
+                        plant = plant,
+                        dateLabel = dateFormat.format(Date(plant.createdAt)),
+                        onClick = { onOpenPlant(plant.id) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                if (rowPlants.size == 1) {
+                    AddSpecimenCard(onClick = onAddPlant, modifier = Modifier.weight(1f))
+                }
+            }
+        }
+        if (plants.size % 2 == 0 && plants.isNotEmpty()) {
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                AddSpecimenCard(onClick = onAddPlant, modifier = Modifier.weight(1f))
+                Box(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SpecimenCard(
+    plant: Plant,
+    dateLabel: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier) {
+        Surface(
+            onClick = onClick,
+            color = MaterialTheme.colorScheme.surfaceContainerLowest,
+            shape = RoundedCornerShape(16.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+            shadowElevation = 6.dp
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(4f / 3f)
+                        .height(144.dp)
                         .clip(RoundedCornerShape(12.dp))
                 ) {
                     if (plant.photoUri != null) {
                         AsyncImage(
                             model = plant.photoUri,
                             contentDescription = null,
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                             modifier = Modifier.fillMaxSize()
                         )
                     } else {
                         Surface(
-                            color = MaterialTheme.colorScheme.primaryContainer,
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            Icon(
-                                Icons.Filled.Eco,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .padding(32.dp)
-                                    .fillMaxSize(),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Filled.Eco,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                    modifier = Modifier.size(40.dp)
+                                )
+                            }
                         }
                     }
-                    RefStamp(
-                        ref = "REF #%03d".format(plant.id),
+                    Surface(
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                        shape = RoundedCornerShape(4.dp),
                         modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(8.dp)
-                    )
-                }
-                if (plant.species.isNotBlank()) {
-                    Text(
-                        plant.species,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontStyle = FontStyle.Italic,
-                            fontFamily = FontFamily.Serif
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 12.dp)
-                    )
+                            .align(Alignment.BottomEnd)
+                            .padding(6.dp)
+                    ) {
+                        Text(
+                            "Nr. %03d".format(plant.id),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
                 }
                 Text(
-                    plant.name.ifBlank { "Ohne Namen" },
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(top = 2.dp)
+                    plant.name.ifBlank { "Unbenannter Fund" },
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.padding(top = 10.dp)
+                )
+                Text(
+                    plant.species.ifBlank { "Unbekannte Art" },
+                    style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    StatusBadge(plant.healthStatus, modifier = Modifier.weight(1f))
-                    IconButton(onClick = onWater) {
-                        Icon(
-                            Icons.Filled.WaterDrop,
-                            contentDescription = "Gegossen",
-                            tint = MaterialTheme.colorScheme.tertiary
-                        )
-                    }
-                    IconButton(onClick = onFertilize) {
-                        Icon(
-                            Icons.Filled.Science,
-                            contentDescription = "Gedüngt",
-                            tint = MaterialTheme.colorScheme.outline
-                        )
-                    }
-                    IconButton(onClick = onDelete) {
-                        Icon(Icons.Filled.Delete, contentDescription = "Löschen")
-                    }
+                    Text(
+                        "Daheim",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        dateLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
                 }
             }
         }
         WashiTape(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .size(width = 72.dp, height = 18.dp)
+                .offset(y = (-8).dp)
+                .width(48.dp)
+                .height(16.dp)
         )
     }
 }
 
 @Composable
-private fun DailyCareCard(
-    item: DailyCareItem,
-    onWater: () -> Unit,
-    onFertilize: () -> Unit,
-    onOpen: () -> Unit
-) {
-    Card(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+private fun AddSpecimenCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        onClick = onClick,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(2.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)),
+        modifier = modifier
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
-            if (item.plant.photoUri != null) {
-                AsyncImage(
-                    model = item.plant.photoUri,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                )
-            } else {
-                Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.size(48.dp)
-                ) {
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
+                shape = CircleShape,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        Icons.Filled.Eco,
+                        Icons.Filled.Add,
                         contentDescription = null,
-                        modifier = Modifier.padding(10.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
-            Column(modifier = Modifier.weight(1f)) {
-                if (item.waterDue) {
-                    Text(
-                        if (item.overdueDays in 1..9999) "Wasser dringend · ${item.overdueDays} Tage überfällig" else "Gießen fällig",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.tertiary
-                    )
-                } else {
-                    Text(
-                        "Düngung fällig",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
-                Text(item.plant.name, style = MaterialTheme.typography.titleMedium)
-            }
-            if (item.waterDue) {
-                val urgentPulse = rememberInfiniteTransition(label = "urgent").animateFloat(
-                    initialValue = 1f,
-                    targetValue = 1.25f,
-                    animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
-                    label = "urgentScale"
-                )
-                IconButton(onClick = onWater) {
-                    Icon(
-                        Icons.Filled.WaterDrop,
-                        contentDescription = "Gegossen",
-                        tint = MaterialTheme.colorScheme.tertiary,
-                        modifier = Modifier.graphicsLayer {
-                            scaleX = urgentPulse.value
-                            scaleY = urgentPulse.value
-                        }
-                    )
-                }
-            }
-            if (item.fertilizeDue) {
-                IconButton(onClick = onFertilize) {
-                    Icon(
-                        Icons.Filled.Science,
-                        contentDescription = "Gedüngt",
-                        tint = MaterialTheme.colorScheme.outline
-                    )
-                }
-            }
+            Text(
+                "Fundstück pressen",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 10.dp)
+            )
+            Text(
+                "Scanne eine Pflanze für dein digitales Herbarium",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp)
+            )
         }
+    }
+}
+
+@Composable
+private fun EmptyHerbarium(onAddPlant: () -> Unit) {
+    val pulse = rememberInfiniteTransition(label = "sprout").animateFloat(
+        initialValue = 1f,
+        targetValue = 1.12f,
+        animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Reverse),
+        label = "sproutScale"
+    )
+    val sway = rememberInfiniteTransition(label = "sway").animateFloat(
+        initialValue = -6f,
+        targetValue = 6f,
+        animationSpec = infiniteRepeatable(tween(2200), RepeatMode.Reverse),
+        label = "swayAngle"
+    )
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 48.dp)
+    ) {
+        Icon(
+            Icons.Filled.Eco,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .size(88.dp)
+                .graphicsLayer {
+                    rotationZ = sway.value
+                    scaleX = pulse.value
+                    scaleY = pulse.value
+                }
+        )
+        Text(
+            "Noch keine Pflanzen erfasst.",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(top = 12.dp)
+        )
+        Text(
+            "Dein Herbarium liegt noch brach –",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            "pflanze deinen ersten grünen Schatz!",
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontStyle = FontStyle.Italic
+            ),
+            color = MaterialTheme.colorScheme.primary
+        )
+        TextButton(onClick = onAddPlant) { Text("Erste Pflanze hinzufügen") }
     }
 }
