@@ -12,6 +12,8 @@ fun RoemerPlantTheme(
 ) {
     MaterialTheme(
         colorScheme = colorSchemeFor(theme, darkTheme),
+        typography = AppTypography,
+        shapes = AppShapes,
         content = content
     )
 }

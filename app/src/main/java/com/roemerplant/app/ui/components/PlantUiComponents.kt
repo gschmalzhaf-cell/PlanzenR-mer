@@ -143,7 +143,7 @@ fun DividerDots(modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center
     ) {
-        listOf(Color(0xFFA5D6A7), Color(0xFF81C784), Color(0xFF66BB6A)).forEach { color ->
+        listOf(Color(0xFF7A9B6D), Color(0xFF5B7552), Color(0xFF9BB391)).forEach { color ->
             Surface(
                 color = color,
                 shape = RoundedCornerShape(50),
