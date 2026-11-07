@@ -5,10 +5,10 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
 enum class AppTheme(val label: String) {
-    HERBARIUM("Herbarium"),
-    FOREST("Waldgrün"),
-    BLOSSOM("Blütenrosa"),
-    TERRACOTTA("Terrakotta")
+    HERBARIUM("Herbarium", 0xFF7A9B6D),
+    FOREST("Waldgrün", 0xFF2E7D32),
+    BLOSSOM("Blütenrosa", 0xFF9C4351),
+    TERRACOTTA("Terrakotta", 0xFF8F4C2F)
 }
 
 private val HerbariumLight = lightColorScheme(
