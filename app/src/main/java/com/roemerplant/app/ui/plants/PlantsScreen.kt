@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -38,6 +39,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import android.widget.Toast
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -69,6 +73,12 @@ fun PlantsScreen(
             animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Reverse),
             label = "sproutScale"
         )
+        val sway = rememberInfiniteTransition(label = "sway").animateFloat(
+            initialValue = -6f,
+            targetValue = 6f,
+            animationSpec = infiniteRepeatable(tween(2200), RepeatMode.Reverse),
+            label = "swayAngle"
+        )
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(
@@ -76,7 +86,11 @@ fun PlantsScreen(
                     contentDescription = null,
                     modifier = Modifier
                         .size(88.dp)
-                        .scale(pulse.value),
+                        .graphicsLayer {
+                            rotationZ = sway.value
+                            scaleX = pulse.value
+                            scaleY = pulse.value
+                        },
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
@@ -85,9 +99,17 @@ fun PlantsScreen(
                     modifier = Modifier.padding(top = 12.dp)
                 )
                 Text(
-                    "Hier könnte deine erste Pflanze wachsen.",
+                    "Dein Herbarium liegt noch brach \u2013",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    "pflanze deine erste grüne Schätzling!",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontFamily = FontFamily.Serif,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    color = MaterialTheme.colorScheme.primary
                 )
                 TextButton(onClick = onAddPlant) { Text("Erste Pflanze hinzufügen") }
             }
@@ -101,6 +123,27 @@ fun PlantsScreen(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item(key = "greeting") {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+                    val greeting = when {
+                        hour < 5 -> "Gute Nacht"
+                        hour < 11 -> "Guten Morgen"
+                        hour < 18 -> "Schönen Tag"
+                        else -> "Guten Abend"
+                    }
+                    Text(
+                        "$greeting, Gärtner!",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    Text(
+                        "${plants.size} Exemplare in deinem Herbarium" +
+                            (if (dailyCare.isNotEmpty()) " \u00b7 ${dailyCare.size} warten auf Zuwendung" else " \u00b7 alles versorgt"),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
             if (dailyCare.isNotEmpty()) {
                 item(key = "curator") {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -130,6 +173,7 @@ fun PlantsScreen(
                 }
             }
             items(plants, key = { it.id }) { plant ->
+                Box(modifier = Modifier.animateItem()) {
                 PlantCard(
                     plant = plant,
                     onClick = { onOpenPlant(plant.id) },
@@ -145,6 +189,7 @@ fun PlantsScreen(
                         Toast.makeText(context, "${plant.name} gedüngt", Toast.LENGTH_SHORT).show()
                     }
                 )
+                }
             }
         }
     }
@@ -158,8 +203,23 @@ private fun PlantCard(
     onWater: () -> Unit,
     onFertilize: () -> Unit
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val cardScale by animateFloatAsState(
+        targetValue = if (pressed) 0.97f else 1f,
+        label = "cardScale"
+    )
     Box(modifier = Modifier.fillMaxWidth()) {
-        Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
+        Card(
+            onClick = onClick,
+            interactionSource = interactionSource,
+            modifier = Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    scaleX = cardScale
+                    scaleY = cardScale
+                }
+        ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Box(
                     modifier = Modifier
@@ -299,11 +359,21 @@ private fun DailyCareCard(
                 Text(item.plant.name, style = MaterialTheme.typography.titleMedium)
             }
             if (item.waterDue) {
+                val urgentPulse = rememberInfiniteTransition(label = "urgent").animateFloat(
+                    initialValue = 1f,
+                    targetValue = 1.25f,
+                    animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
+                    label = "urgentScale"
+                )
                 IconButton(onClick = onWater) {
                     Icon(
                         Icons.Filled.WaterDrop,
                         contentDescription = "Gegossen",
-                        tint = MaterialTheme.colorScheme.tertiary
+                        tint = MaterialTheme.colorScheme.tertiary,
+                        modifier = Modifier.graphicsLayer {
+                            scaleX = urgentPulse.value
+                            scaleY = urgentPulse.value
+                        }
                     )
                 }
             }

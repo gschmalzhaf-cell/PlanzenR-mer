@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,6 +38,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import android.net.Uri
 import android.widget.Toast
@@ -49,6 +52,8 @@ import coil.compose.AsyncImage
 import com.roemerplant.app.ui.components.CareIcons
 import com.roemerplant.app.ui.components.EditableField
 import com.roemerplant.app.ui.components.GrowingPlantLoader
+import com.roemerplant.app.ui.components.RefStamp
+import com.roemerplant.app.ui.components.WashiTape
 import com.roemerplant.app.ui.components.InfoRow
 import com.roemerplant.app.ui.components.SectionCard
 import com.roemerplant.app.ui.components.StatusBadge
@@ -112,13 +117,29 @@ fun PlantDetailScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             plant.photoUri?.let { uri ->
-                AsyncImage(
-                    model = uri,
-                    contentDescription = "Pflanzenfoto",
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                )
+                ) {
+                    AsyncImage(
+                        model = uri,
+                        contentDescription = "Pflanzenfoto",
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    RefStamp(
+                        ref = "REF #%03d".format(plant.id),
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(10.dp)
+                    )
+                    WashiTape(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 0.dp)
+                            .size(width = 72.dp, height = 18.dp)
+                    )
+                }
             }
 
             state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
