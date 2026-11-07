@@ -716,7 +716,6 @@ private fun ActionRow(
             }
         }
     }
-  }
 }
 
 @Composable
