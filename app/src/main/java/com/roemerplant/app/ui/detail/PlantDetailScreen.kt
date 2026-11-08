@@ -55,7 +55,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import android.net.Uri
 import androidx.compose.ui.layout.ContentScale
@@ -542,7 +542,7 @@ private fun SteckbriefCard(plant: com.roemerplant.app.data.model.Plant) {
                 "Familie" to plant.family.ifBlank { "Unbekannt" },
                 "Art" to plant.species.ifBlank { "Unbestimmt" },
                 "Erfasst am" to dateFormat.format(Date(plant.createdAt)),
-                "Gießintervall" to "Alle ${plant.waterIntervalDays} Tage"
+                "Status" to plant.healthStatus.ifBlank { "Unbekannt" }
             )
             tiles.chunked(2).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -737,12 +737,6 @@ private fun EditSections(
             EditableField("Temperatur", plant.careTemperature) { v -> viewModel.updatePlant { it.copy(careTemperature = v) } }
             EditableField("Düngen", plant.careFertilizer) { v -> viewModel.updatePlant { it.copy(careFertilizer = v) } }
             EditableField("Substrat", plant.careSoil) { v -> viewModel.updatePlant { it.copy(careSoil = v) } }
-            EditableField("Gieß-Intervall (Tage)", plant.waterIntervalDays.toString()) { v ->
-                viewModel.updatePlant { it.copy(waterIntervalDays = v.toIntOrNull() ?: it.waterIntervalDays) }
-            }
-            EditableField("Dünge-Intervall (Tage)", plant.fertilizeIntervalDays.toString()) { v ->
-                viewModel.updatePlant { it.copy(fertilizeIntervalDays = v.toIntOrNull() ?: it.fertilizeIntervalDays) }
-            }
         }
         SectionCard("Gesundheit") {
             EditableField("Status", plant.healthStatus) { v -> viewModel.updatePlant { it.copy(healthStatus = v) } }

@@ -9,13 +9,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.Compost
 import androidx.compose.material.icons.filled.Eco
-import androidx.compose.material.icons.filled.Grass
-import androidx.compose.material.icons.filled.Thermostat
-import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material.icons.filled.WbSunny
-import androidx.compose.material.icons.outlined.Air
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -26,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -62,39 +55,6 @@ fun EditableField(
         modifier = modifier.fillMaxWidth(),
         minLines = minLines
     )
-}
-
-@Composable
-fun InfoRow(label: String, value: String, icon: ImageVector? = null) {
-    if (value.isNotBlank()) {
-        Row(
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (icon != null) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-            Column {
-                Text(label, style = MaterialTheme.typography.labelMedium)
-                Text(value, style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-    }
-}
-
-object CareIcons {
-    val light = Icons.Filled.WbSunny
-    val water = Icons.Filled.WaterDrop
-    val humidity = Icons.Outlined.Air
-    val temperature = Icons.Filled.Thermostat
-    val fertilizer = Icons.Filled.Compost
-    val soil = Icons.Filled.Grass
-    val pest = Icons.Filled.BugReport
 }
 
 @Composable

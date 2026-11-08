@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
@@ -9,14 +8,14 @@ plugins {
 
 android {
     namespace = "com.roemerplant.app"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.roemerplant.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "2.8.0"
+        versionCode = 9
+        versionName = "2.9.0"
     }
 
     signingConfigs {
@@ -48,9 +47,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
 
     buildFeatures {
         compose = true
@@ -75,7 +71,7 @@ dependencies {
 
     implementation(libs.navigation.compose)
     implementation(libs.hilt.android)
-    implementation(libs.hilt.navigation.compose)
+    implementation(libs.hilt.lifecycle.viewmodel.compose)
     ksp(libs.hilt.compiler)
 
     implementation(libs.room.runtime)
