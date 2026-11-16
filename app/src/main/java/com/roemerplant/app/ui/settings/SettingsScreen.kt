@@ -1,5 +1,7 @@
 package com.roemerplant.app.ui.settings
 
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -9,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -20,9 +23,13 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Dialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -37,6 +44,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -160,6 +170,33 @@ fun SettingsScreen(
                 }
             }
 
+            SectionCard("Diagnose & Fehlerbericht") {
+                Text(
+                    "Beschreibe einen Fehler oder Verbesserungsvorschlag und erzeuge einen Diagnose-Report zum Weitergeben.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = state.reportDescription,
+                    onValueChange = viewModel::onReportDescriptionChange,
+                    label = { Text("Was ist passiert?") },
+                    minLines = 3,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Button(
+                    onClick = viewModel::generateReport,
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f),
+                        contentColor = MaterialTheme.colorScheme.tertiary
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Filled.BugReport, contentDescription = null)
+                    Text("Report erstellen", modifier = Modifier.padding(start = 10.dp))
+                }
+            }
+
             Button(
                 onClick = viewModel::save,
                 enabled = !state.isSaving,
@@ -174,6 +211,92 @@ fun SettingsScreen(
             ) {
                 Icon(Icons.Filled.Eco, contentDescription = null)
                 Text("Speichern", modifier = Modifier.padding(start = 10.dp))
+            }
+        }
+    }
+
+    state.generatedReport?.let { report ->
+        ReportDialog(
+            report = report,
+            onDismiss = viewModel::dismissReport
+        )
+    }
+}
+
+@Composable
+private fun ReportDialog(
+    report: String,
+    onDismiss: () -> Unit
+) {
+    val clipboard = LocalClipboardManager.current
+    val context = LocalContext.current
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerLowest
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(
+                    "Diagnose-Report",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp)
+                        .heightIn(max = 360.dp)
+                ) {
+                    Text(
+                        report,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .verticalScroll(rememberScrollState())
+                    )
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            clipboard.setText(AnnotatedString(report))
+                            Toast.makeText(context, "Report kopiert", Toast.LENGTH_SHORT).show()
+                        },
+                        shape = RoundedCornerShape(50),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Filled.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Text("Kopieren", modifier = Modifier.padding(start = 6.dp))
+                    }
+                    Button(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, report)
+                                putExtra(Intent.EXTRA_TITLE, "PlanzenR Diagnose-Report")
+                            }
+                            context.startActivity(Intent.createChooser(intent, "Report teilen"))
+                        },
+                        shape = RoundedCornerShape(50),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Text("Teilen", modifier = Modifier.padding(start = 6.dp))
+                    }
+                }
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                ) {
+                    Text("Schließen")
+                }
             }
         }
     }
