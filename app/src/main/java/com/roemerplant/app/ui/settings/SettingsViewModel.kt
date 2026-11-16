@@ -1,10 +1,13 @@
 package com.roemerplant.app.ui.settings
 
+import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.roemerplant.app.data.PlantRepository
 import com.roemerplant.app.data.ai.PlantAiRepository
 import com.roemerplant.app.data.settings.SettingsRepository
 import com.roemerplant.app.ui.theme.AppTheme
+import com.roemerplant.app.util.Diagnostics
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,13 +23,17 @@ data class SettingsUiState(
     val availableModels: List<String> = emptyList(),
     val isLoadingModels: Boolean = false,
     val isSaving: Boolean = false,
-    val message: String? = null
+    val message: String? = null,
+    val reportDescription: String = "",
+    val generatedReport: String? = null
 )
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
+    private val app: Application,
     private val settings: SettingsRepository,
-    private val aiRepository: PlantAiRepository
+    private val aiRepository: PlantAiRepository,
+    private val plantRepository: PlantRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsUiState())
@@ -87,6 +94,32 @@ class SettingsViewModel @Inject constructor(
                 isSaving = false,
                 message = "Gespeichert."
             )
+        }
+    }
+
+    fun onReportDescriptionChange(value: String) {
+        _state.value = _state.value.copy(reportDescription = value)
+    }
+
+    fun dismissReport() {
+        _state.value = _state.value.copy(generatedReport = null)
+    }
+
+    fun generateReport() {
+        viewModelScope.launch {
+            val plants = plantRepository.observeAll().first()
+            val apiKeySet = settings.mistralApiKey.first().isNotBlank()
+            val model = settings.mistralModel.first()
+            val theme = settings.appTheme.first()
+            val report = Diagnostics.buildReport(
+                context = app,
+                theme = theme,
+                apiKeySet = apiKeySet,
+                model = model,
+                plants = plants,
+                description = _state.value.reportDescription
+            )
+            _state.value = _state.value.copy(generatedReport = report)
         }
     }
 }
