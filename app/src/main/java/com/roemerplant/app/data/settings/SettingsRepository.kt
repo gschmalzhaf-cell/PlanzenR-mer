@@ -53,6 +53,6 @@ class SettingsRepository @Inject constructor(
     }
 
     companion object {
-        const val DEFAULT_MODEL = "mistral-large-latest"
+        const val DEFAULT_MODEL = "pixtral-12b-latest"
     }
 }

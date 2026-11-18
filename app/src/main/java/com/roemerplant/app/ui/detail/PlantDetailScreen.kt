@@ -35,12 +35,15 @@ import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material.icons.outlined.Air
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -51,7 +54,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -75,6 +77,7 @@ fun PlantDetailScreen(
     val state by viewModel.state.collectAsState()
     val apiKeyConfigured by viewModel.apiKeyConfigured.collectAsState()
     val plant = state.plant
+    var showDeleteConfirm by remember { mutableStateOf(false) }
 
     var cameraUri by remember { mutableStateOf<Uri?>(null) }
     val takePicture = rememberLauncherForActivityResult(
@@ -92,21 +95,56 @@ fun PlantDetailScreen(
         return
     }
 
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = {
+                Text(
+                    "Aus dem Herbarium entfernen?",
+                    style = MaterialTheme.typography.titleMedium
+                )
+            },
+            text = {
+                Text(
+                    "Möchtest du „${plant.name.ifBlank { plant.species.ifBlank { "diese Pflanze" } }}“ wirklich unwiderruflich löschen?",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirm = false
+                        viewModel.delete()
+                        onBack()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) {
+                    Text("Löschen")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Abbrechen")
+                }
+            }
+        )
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(bottom = 112.dp)
+                .padding(bottom = 40.dp)
         ) {
             DetailHeaderRow(
                 onBack = onBack,
                 isEditing = state.isEditing,
                 onToggleEdit = { viewModel.setEditing(!state.isEditing) },
-                onDelete = {
-                    viewModel.delete()
-                    onBack()
-                }
+                onDelete = { showDeleteConfirm = true }
             )
 
             Column(
@@ -115,7 +153,6 @@ fun PlantDetailScreen(
             ) {
                 HeroPhoto(
                     plant = plant,
-                    onBack = onBack,
                     onTakePhoto = {
                         val uri = viewModel.createCameraCaptureUri()
                         cameraUri = uri
@@ -128,10 +165,27 @@ fun PlantDetailScreen(
                     }
                 )
 
-                state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                state.error?.let { err ->
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            err,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(14.dp)
+                        )
+                    }
+                }
 
                 if (state.isEditing) {
-                    EditSections(plant, viewModel)
+                    EditSections(
+                        plant = plant,
+                        viewModel = viewModel,
+                        onDone = { viewModel.setEditing(false) }
+                    )
                 } else {
                     TitleRow(plant)
                     if (plant.description.isNotBlank()) {
@@ -147,7 +201,10 @@ fun PlantDetailScreen(
                     if (plant.healthStatus.isNotBlank() || plant.healthAnalysis.isNotBlank()) {
                         HealthCard(plant)
                     }
-                    JournalCard(plant)
+                    JournalCard(
+                        plant = plant,
+                        onEditClick = { viewModel.setEditing(true) }
+                    )
                     ActionRow(
                         plant = plant,
                         apiKeyConfigured = apiKeyConfigured,
@@ -157,7 +214,6 @@ fun PlantDetailScreen(
                 }
             }
         }
-
     }
 }
 
@@ -191,7 +247,7 @@ private fun DetailHeaderRow(
                 }
             }
             Text(
-                "PflanzenR",
+                if (isEditing) "Steckbrief bearbeiten" else "RömerPlant",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -199,15 +255,17 @@ private fun DetailHeaderRow(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Surface(
                 onClick = onToggleEdit,
-                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                color = if (isEditing) MaterialTheme.colorScheme.primaryContainer
+                else MaterialTheme.colorScheme.surfaceContainerLow,
                 shape = CircleShape,
                 modifier = Modifier.size(40.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
-                        Icons.Filled.Edit,
+                        if (isEditing) Icons.Filled.Check else Icons.Filled.Edit,
                         contentDescription = if (isEditing) "Fertig" else "Bearbeiten",
-                        tint = MaterialTheme.colorScheme.onSurface
+                        tint = if (isEditing) MaterialTheme.colorScheme.onPrimaryContainer
+                        else MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -232,7 +290,6 @@ private fun DetailHeaderRow(
 @Composable
 private fun HeroPhoto(
     plant: com.roemerplant.app.data.model.Plant,
-    onBack: () -> Unit,
     onTakePhoto: () -> Unit,
     onPickPhoto: () -> Unit
 ) {
@@ -266,21 +323,20 @@ private fun HeroPhoto(
             }
         }
         Surface(
-            onClick = onBack,
             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-            shape = CircleShape,
+            shape = RoundedCornerShape(50),
             shadowElevation = 4.dp,
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(16.dp)
         ) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(44.dp)) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Zurück",
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
+            Text(
+                "Nr. %03d".format(plant.id),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+            )
         }
         Surface(
             onClick = onTakePhoto,
@@ -602,9 +658,13 @@ private fun HealthCard(plant: com.roemerplant.app.data.model.Plant) {
 }
 
 @Composable
-private fun JournalCard(plant: com.roemerplant.app.data.model.Plant) {
+private fun JournalCard(
+    plant: com.roemerplant.app.data.model.Plant,
+    onEditClick: () -> Unit
+) {
 
     Surface(
+        onClick = onEditClick,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(20.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
@@ -669,9 +729,9 @@ private fun JournalCard(plant: com.roemerplant.app.data.model.Plant) {
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    "Notiz bearbeiten über den Stift oben",
+                    "Tippen zum Bearbeiten der Notizen",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
@@ -716,27 +776,42 @@ private fun ActionRow(
 @Composable
 private fun EditSections(
     plant: com.roemerplant.app.data.model.Plant,
-    viewModel: PlantDetailViewModel
+    viewModel: PlantDetailViewModel,
+    onDone: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         SectionCard("Allgemein") {
             EditableField("Name", plant.name) { v -> viewModel.updatePlant { it.copy(name = v, updatedAt = System.currentTimeMillis()) } }
             EditableField("Art", plant.species) { v -> viewModel.updatePlant { it.copy(species = v, updatedAt = System.currentTimeMillis()) } }
-            EditableField("Familie", plant.family) { v -> viewModel.updatePlant { it.copy(family = v) } }
-            EditableField("Beschreibung", plant.description, minLines = 3) { v -> viewModel.updatePlant { it.copy(description = v, updatedAt = System.currentTimeMillis()) } }
+            EditableField("Familie", plant.family) { v -> viewModel.updatePlant { it.copy(family = v, updatedAt = System.currentTimeMillis()) } }
+            EditableField("Beschreibung & Notizen", plant.description, minLines = 3) { v -> viewModel.updatePlant { it.copy(description = v, updatedAt = System.currentTimeMillis()) } }
         }
         SectionCard("Pflege") {
-            EditableField("Licht", plant.careLight) { v -> viewModel.updatePlant { it.copy(careLight = v) } }
-            EditableField("Gießen", plant.careWater) { v -> viewModel.updatePlant { it.copy(careWater = v) } }
-            EditableField("Luftfeuchtigkeit", plant.careHumidity) { v -> viewModel.updatePlant { it.copy(careHumidity = v) } }
-            EditableField("Temperatur", plant.careTemperature) { v -> viewModel.updatePlant { it.copy(careTemperature = v) } }
-            EditableField("Düngen", plant.careFertilizer) { v -> viewModel.updatePlant { it.copy(careFertilizer = v) } }
-            EditableField("Substrat", plant.careSoil) { v -> viewModel.updatePlant { it.copy(careSoil = v) } }
+            EditableField("Licht", plant.careLight) { v -> viewModel.updatePlant { it.copy(careLight = v, updatedAt = System.currentTimeMillis()) } }
+            EditableField("Gießen", plant.careWater) { v -> viewModel.updatePlant { it.copy(careWater = v, updatedAt = System.currentTimeMillis()) } }
+            EditableField("Luftfeuchtigkeit", plant.careHumidity) { v -> viewModel.updatePlant { it.copy(careHumidity = v, updatedAt = System.currentTimeMillis()) } }
+            EditableField("Temperatur", plant.careTemperature) { v -> viewModel.updatePlant { it.copy(careTemperature = v, updatedAt = System.currentTimeMillis()) } }
+            EditableField("Düngen", plant.careFertilizer) { v -> viewModel.updatePlant { it.copy(careFertilizer = v, updatedAt = System.currentTimeMillis()) } }
+            EditableField("Substrat", plant.careSoil) { v -> viewModel.updatePlant { it.copy(careSoil = v, updatedAt = System.currentTimeMillis()) } }
         }
         SectionCard("Gesundheit") {
-            EditableField("Status", plant.healthStatus) { v -> viewModel.updatePlant { it.copy(healthStatus = v) } }
-            EditableField("Analyse", plant.healthAnalysis, minLines = 3) { v -> viewModel.updatePlant { it.copy(healthAnalysis = v) } }
-            EditableField("Anweisungen (eine pro Zeile)", plant.healthInstructions, minLines = 3) { v -> viewModel.updatePlant { it.copy(healthInstructions = v) } }
+            EditableField("Status", plant.healthStatus) { v -> viewModel.updatePlant { it.copy(healthStatus = v, updatedAt = System.currentTimeMillis()) } }
+            EditableField("Analyse", plant.healthAnalysis, minLines = 3) { v -> viewModel.updatePlant { it.copy(healthAnalysis = v, updatedAt = System.currentTimeMillis()) } }
+            EditableField("Anweisungen (eine pro Zeile)", plant.healthInstructions, minLines = 3) { v -> viewModel.updatePlant { it.copy(healthInstructions = v, updatedAt = System.currentTimeMillis()) } }
+        }
+        Button(
+            onClick = onDone,
+            shape = RoundedCornerShape(50),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
+        ) {
+            Icon(Icons.Filled.Check, contentDescription = null)
+            Text("Bearbeitung abschließen", modifier = Modifier.padding(start = 8.dp))
         }
     }
 }

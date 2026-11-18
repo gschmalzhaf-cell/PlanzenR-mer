@@ -20,16 +20,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.window.Dialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -39,6 +43,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -47,6 +54,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.roemerplant.app.ui.components.SectionCard
@@ -58,6 +66,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    var showApiKey by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -87,7 +96,7 @@ fun SettingsScreen(
                 }
             }
             Text(
-                "Profil",
+                "Profil & Einstellungen",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -120,12 +129,22 @@ fun SettingsScreen(
                 }
             }
 
-            SectionCard("Mistral-KI") {
+            SectionCard("Mistral-KI & Modell") {
                 OutlinedTextField(
                     value = state.apiKeyInput,
                     onValueChange = viewModel::onApiKeyChange,
                     label = { Text("Mistral API-Key") },
-                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    visualTransformation = if (showApiKey) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { showApiKey = !showApiKey }) {
+                            Icon(
+                                if (showApiKey) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                contentDescription = if (showApiKey) "API-Key verbergen" else "API-Key anzeigen"
+                            )
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Text(
@@ -133,13 +152,12 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            }
-
-            SectionCard("KI-Modell") {
                 OutlinedTextField(
                     value = state.modelInput,
                     onValueChange = viewModel::onModelChange,
-                    label = { Text("Modell") },
+                    label = { Text("KI-Modell (z. B. pixtral-12b-latest)") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
                 OutlinedButton(
@@ -156,14 +174,71 @@ fun SettingsScreen(
                     }
                     Text("Verfügbare Modelle laden")
                 }
-                state.availableModels.forEach { model ->
-                    TextButton(
-                        onClick = { viewModel.onModelChange(model) },
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text(model) }
+                if (state.availableModels.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        state.availableModels.forEach { model ->
+                            val selected = state.modelInput == model
+                            Surface(
+                                onClick = { viewModel.onModelChange(model) },
+                                color = if (selected) MaterialTheme.colorScheme.primaryContainer
+                                else MaterialTheme.colorScheme.surfaceContainerLow,
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                                ) {
+                                    Text(
+                                        model,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                                        color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                                        else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (selected) {
+                                        Icon(
+                                            Icons.Filled.Check,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-                state.message?.let {
-                    Text(it, style = MaterialTheme.typography.bodySmall)
+                state.message?.let { msg ->
+                    val isError = msg.contains("nicht", ignoreCase = true) || msg.contains("Fehler", ignoreCase = true)
+                    Surface(
+                        color = if (isError) MaterialTheme.colorScheme.errorContainer
+                        else MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            msg,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (isError) MaterialTheme.colorScheme.onErrorContainer
+                            else MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+                Button(
+                    onClick = viewModel::save,
+                    enabled = !state.isSaving,
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Filled.Eco, contentDescription = null)
+                    Text("KI-Einstellungen speichern", modifier = Modifier.padding(start = 10.dp))
                 }
             }
 
@@ -177,6 +252,7 @@ fun SettingsScreen(
                     value = state.reportDescription,
                     onValueChange = viewModel::onReportDescriptionChange,
                     label = { Text("Was ist passiert?") },
+                    shape = RoundedCornerShape(14.dp),
                     minLines = 3,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -192,22 +268,6 @@ fun SettingsScreen(
                     Icon(Icons.Filled.BugReport, contentDescription = null)
                     Text("Report erstellen", modifier = Modifier.padding(start = 10.dp))
                 }
-            }
-
-            Button(
-                onClick = viewModel::save,
-                enabled = !state.isSaving,
-                shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp)
-            ) {
-                Icon(Icons.Filled.Eco, contentDescription = null)
-                Text("Speichern", modifier = Modifier.padding(start = 10.dp))
             }
         }
     }
@@ -264,7 +324,7 @@ private fun ReportDialog(
                         onClick = {
                             val cm = context.getSystemService(android.content.ClipboardManager::class.java)
                             cm?.setPrimaryClip(
-                                android.content.ClipData.newPlainText("PlanzenR Diagnose-Report", report)
+                                android.content.ClipData.newPlainText("RömerPlant Diagnose-Report", report)
                             )
                             Toast.makeText(context, "Report kopiert", Toast.LENGTH_SHORT).show()
                         },
@@ -279,7 +339,7 @@ private fun ReportDialog(
                             val intent = Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
                                 putExtra(Intent.EXTRA_TEXT, report)
-                                putExtra(Intent.EXTRA_TITLE, "PlanzenR Diagnose-Report")
+                                putExtra(Intent.EXTRA_TITLE, "RömerPlant Diagnose-Report")
                             }
                             context.startActivity(Intent.createChooser(intent, "Report teilen"))
                         },
@@ -370,7 +430,7 @@ private fun ProfileHeaderCard() {
                         style = MaterialTheme.typography.titleMedium
                     )
                     Text(
-                        "PflanzenR begleitet deine Sammlung",
+                        "RömerPlant begleitet deine Sammlung",
                         style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

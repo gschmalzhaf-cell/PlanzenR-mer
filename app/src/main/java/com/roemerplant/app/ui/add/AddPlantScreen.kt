@@ -54,6 +54,7 @@ import com.roemerplant.app.ui.components.SectionCard
 fun AddPlantScreen(
     onSaved: (Long) -> Unit,
     onBack: () -> Unit,
+    onOpenSettings: () -> Unit = {},
     viewModel: AddPlantViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -127,8 +128,19 @@ fun AddPlantScreen(
                 }
             )
 
-            state.error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error)
+            state.error?.let { err ->
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        err,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(14.dp)
+                    )
+                }
             }
 
             if (state.photoUri != null) {
@@ -156,11 +168,27 @@ fun AddPlantScreen(
                         }
                     }
                 } else {
-                    Text(
-                        "Für die KI-Bestimmung bitte zuerst den Mistral-API-Key im Profil hinterlegen.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    Surface(
+                        onClick = onOpenSettings,
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Text(
+                                "Mistral-API-Key fehlt",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Text(
+                                "Tippe hier, um im Profil deinen API-Key für die KI-Bestimmung zu hinterlegen.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                        }
+                    }
                 }
             }
 
@@ -169,8 +197,11 @@ fun AddPlantScreen(
                 EditableField("Art (z. B. Monstera deliciosa)", state.species) { v ->
                     viewModel.update { it.copy(species = v) }
                 }
+                EditableField("Familie (z. B. Aronstabgewächse)", state.family) { v ->
+                    viewModel.update { it.copy(family = v) }
+                }
                 EditableField(
-                    "Beschreibung", state.description,
+                    "Beschreibung & Notizen", state.description,
                     minLines = 3
                 ) { v -> viewModel.update { it.copy(description = v) } }
             }

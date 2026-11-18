@@ -28,12 +28,25 @@ fun SectionCard(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    Card(modifier = modifier.fillMaxWidth()) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        shape = RoundedCornerShape(20.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+        ),
+        shadowElevation = 3.dp,
+        modifier = modifier.fillMaxWidth()
+    ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
             DividerDots()
             content()
         }
@@ -52,6 +65,7 @@ fun EditableField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
+        shape = RoundedCornerShape(14.dp),
         modifier = modifier.fillMaxWidth(),
         minLines = minLines
     )
@@ -99,11 +113,16 @@ fun StatusBadge(status: String, modifier: Modifier = Modifier) {
 
 @Composable
 fun DividerDots(modifier: Modifier = Modifier) {
+    val scheme = MaterialTheme.colorScheme
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.Center
     ) {
-        listOf(Color(0xFF7A9B6D), Color(0xFF5B7552), Color(0xFF9BB391)).forEach { color ->
+        listOf(
+            scheme.primary.copy(alpha = 0.55f),
+            scheme.primary,
+            scheme.primary.copy(alpha = 0.55f)
+        ).forEach { color ->
             Surface(
                 color = color,
                 shape = RoundedCornerShape(50),
@@ -114,3 +133,4 @@ fun DividerDots(modifier: Modifier = Modifier) {
         }
     }
 }
+

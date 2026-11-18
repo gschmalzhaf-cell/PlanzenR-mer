@@ -34,15 +34,17 @@ import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.LocalFlorist
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SortByAlpha
 import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material.icons.filled.TravelExplore
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -62,14 +64,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.roemerplant.app.data.model.Plant
@@ -77,13 +77,13 @@ import com.roemerplant.app.ui.components.LeafPattern
 import com.roemerplant.app.ui.components.WashiTape
 import com.roemerplant.app.util.DateFormats
 
-
 @Composable
 fun PlantsScreen(
     onAddPlant: () -> Unit,
     onOpenPlant: (Long) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenCollection: () -> Unit = {},
+    onOpenTips: () -> Unit = {},
     collectionOnly: Boolean = false,
     viewModel: PlantsViewModel = hiltViewModel()
 ) {
@@ -94,7 +94,8 @@ fun PlantsScreen(
     val filtered = remember(plants, query, sortByName) {
         val byQuery = if (query.isBlank()) plants else plants.filter {
             it.name.contains(query, ignoreCase = true) ||
-                it.species.contains(query, ignoreCase = true)
+                it.species.contains(query, ignoreCase = true) ||
+                it.family.contains(query, ignoreCase = true)
         }
         if (sortByName) byQuery.sortedBy { it.name.lowercase() } else byQuery.sortedByDescending { it.createdAt }
     }
@@ -103,7 +104,7 @@ fun PlantsScreen(
         LeafPattern(modifier = Modifier.fillMaxSize())
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 16.dp),
+            contentPadding = PaddingValues(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             item(key = "topbar") {
@@ -113,12 +114,17 @@ fun PlantsScreen(
                 item(key = "search") {
                     LeafSearchBar(
                         query = query,
+                        sortByName = sortByName,
                         onQueryChange = { query = it },
                         onToggleSort = { sortByName = !sortByName }
                     )
                 }
                 if (plants.isEmpty()) {
                     item(key = "empty") { EmptyHerbarium(onAddPlant = onAddPlant) }
+                } else if (filtered.isEmpty()) {
+                    item(key = "no_matches") {
+                        NoSearchMatches(query = query, onClearQuery = { query = "" })
+                    }
                 } else {
                     item(key = "sammlung") {
                         HerbariumSection(
@@ -129,42 +135,79 @@ fun PlantsScreen(
                     }
                 }
             } else {
-            item(key = "greeting") { GreetingBanner(plantCount = plants.size) }
-            item(key = "search") {
-                LeafSearchBar(
-                    query = query,
-                    onQueryChange = { query = it },
-                    onToggleSort = { sortByName = !sortByName }
-                )
-            }
-            item(key = "quickactions") {
-                QuickActionRow(
-                    onCamera = onAddPlant,
-                    onIdentify = onAddPlant
-                )
-            }
-            item(key = "wave1") { WavyDivider(color = MaterialTheme.colorScheme.surfaceContainerLow) }
+                item(key = "greeting") { GreetingBanner(plantCount = plants.size) }
+                item(key = "search") {
+                    LeafSearchBar(
+                        query = query,
+                        sortByName = sortByName,
+                        onQueryChange = { query = it },
+                        onToggleSort = { sortByName = !sortByName }
+                    )
+                }
+                item(key = "quickactions") {
+                    QuickActionRow(
+                        onCamera = onAddPlant,
+                        onIdentify = onAddPlant,
+                        onTips = onOpenTips
+                    )
+                }
+                item(key = "wave1") { WavyDivider(color = MaterialTheme.colorScheme.surfaceContainerLow) }
 
-            if (plants.isEmpty()) {
-                item(key = "empty") { EmptyHerbarium(onAddPlant = onAddPlant) }
-            } else {
-                item(key = "carousel") {
-                    PlantCarouselSection(
-                        plants = filtered,
-                        onOpenPlant = onOpenPlant,
-                        onOpenCollection = onOpenCollection
-                    )
-                }
-                item(key = "caretip") { CareTipCard() }
-                item(key = "sammlung") {
-                    HerbariumSection(
-                        plants = filtered,
-                        onOpenPlant = onOpenPlant,
-                        onAddPlant = onAddPlant
-                    )
+                if (plants.isEmpty()) {
+                    item(key = "empty") { EmptyHerbarium(onAddPlant = onAddPlant) }
+                } else if (filtered.isEmpty()) {
+                    item(key = "no_matches") {
+                        NoSearchMatches(query = query, onClearQuery = { query = "" })
+                    }
+                } else {
+                    item(key = "carousel") {
+                        PlantCarouselSection(
+                            plants = filtered,
+                            onOpenPlant = onOpenPlant,
+                            onOpenCollection = onOpenCollection
+                        )
+                    }
+                    item(key = "caretip") { CareTipCard(onClick = onOpenTips) }
+                    item(key = "sammlung") {
+                        HerbariumSection(
+                            plants = filtered,
+                            onOpenPlant = onOpenPlant,
+                            onAddPlant = onAddPlant
+                        )
+                    }
                 }
             }
-            }
+        }
+    }
+}
+
+@Composable
+private fun NoSearchMatches(query: String, onClearQuery: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 40.dp)
+    ) {
+        Icon(
+            Icons.Filled.Search,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.outline,
+            modifier = Modifier.size(48.dp)
+        )
+        Text(
+            "Keine Pflanze für „$query“ gefunden",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(top = 12.dp)
+        )
+        Text(
+            "Prüfe die Schreibweise oder setze die Suche zurück.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+        TextButton(onClick = onClearQuery, modifier = Modifier.padding(top = 6.dp)) {
+            Text("Suche zurücksetzen")
         }
     }
 }
@@ -180,6 +223,7 @@ private fun HomeTopBar(onOpenSettings: () -> Unit) {
     ) {
         Box {
             Surface(
+                onClick = onOpenSettings,
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                 shape = CircleShape,
                 border = BorderStroke(2.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)),
@@ -187,7 +231,7 @@ private fun HomeTopBar(onOpenSettings: () -> Unit) {
             ) {
                 Icon(
                     Icons.Filled.Eco,
-                    contentDescription = null,
+                    contentDescription = "Profil öffnen",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(9.dp)
                 )
@@ -214,7 +258,7 @@ private fun HomeTopBar(onOpenSettings: () -> Unit) {
                 tint = MaterialTheme.colorScheme.primary
             )
             Text(
-                "PflanzenR",
+                "RömerPlant",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -223,7 +267,7 @@ private fun HomeTopBar(onOpenSettings: () -> Unit) {
             IconButton(onClick = onOpenSettings) {
                 Icon(
                     Icons.Filled.Notifications,
-                    contentDescription = "Benachrichtigungen",
+                    contentDescription = "Einstellungen & Profil",
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -241,13 +285,14 @@ private fun HomeTopBar(onOpenSettings: () -> Unit) {
 
 @Composable
 private fun GreetingBanner(plantCount: Int) {
-    val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
+    val hour = remember { java.time.LocalTime.now().hour }
     val (greeting, mood) = when {
         hour < 5 -> "Gute Nacht" to "Selbst Moonflowers schlafen jetzt."
         hour < 11 -> "Guten Morgen" to "Heute ist ein herrlicher Tag zum Blühen."
         hour < 18 -> "Schönen Tag" to "Die Sonne küsst deine Blätter."
         else -> "Guten Abend" to "Zeit, die Blätter zur Ruhe zu betten."
     }
+    val countLabel = if (plantCount == 1) "1 Exemplar" else "$plantCount Exemplare"
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -274,7 +319,7 @@ private fun GreetingBanner(plantCount: Int) {
             modifier = Modifier.padding(top = 2.dp)
         )
         Text(
-            "$mood · $plantCount Exemplare in deinem Herbarium",
+            "$mood · $countLabel in deinem Herbarium",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 2.dp)
@@ -285,6 +330,7 @@ private fun GreetingBanner(plantCount: Int) {
 @Composable
 private fun LeafSearchBar(
     query: String,
+    sortByName: Boolean,
     onQueryChange: (String) -> Unit,
     onToggleSort: () -> Unit
 ) {
@@ -298,7 +344,7 @@ private fun LeafSearchBar(
         Surface(
             color = MaterialTheme.colorScheme.surfaceContainerLow,
             shape = RoundedCornerShape(topStart = 24.dp, bottomEnd = 24.dp, topEnd = 12.dp, bottomStart = 12.dp),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
             modifier = Modifier.weight(1f)
         ) {
             Row(
@@ -314,9 +360,8 @@ private fun LeafSearchBar(
                     value = query,
                     onValueChange = onQueryChange,
                     singleLine = true,
-                    textStyle = TextStyle(
-                        fontFamily = FontFamily.SansSerif,
-                        fontSize = 15.sp,
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
                         color = MaterialTheme.colorScheme.onSurface
                     ),
                     modifier = Modifier
@@ -325,7 +370,7 @@ private fun LeafSearchBar(
                     decorationBox = { innerTextField ->
                         if (query.isEmpty()) {
                             Text(
-                                "Finde Pflanzen, Herbarium-Karten...",
+                                "Finde Pflanzen, Arten, Familien …",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.outline
                             )
@@ -333,19 +378,43 @@ private fun LeafSearchBar(
                         innerTextField()
                     }
                 )
+                if (query.isNotEmpty()) {
+                    IconButton(
+                        onClick = { onQueryChange("") },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Filled.Close,
+                            contentDescription = "Suche leeren",
+                            tint = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
             }
         }
         Surface(
             onClick = onToggleSort,
             color = MaterialTheme.colorScheme.secondaryContainer,
             shape = RoundedCornerShape(topStart = 16.dp, bottomEnd = 16.dp, topEnd = 8.dp, bottomStart = 8.dp),
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.height(48.dp)
         ) {
-            Box(contentAlignment = Alignment.Center) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(horizontal = 12.dp)
+            ) {
                 Icon(
-                    Icons.Filled.Tune,
+                    if (sortByName) Icons.Filled.SortByAlpha else Icons.Filled.Schedule,
                     contentDescription = "Sortierung wechseln",
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    if (sortByName) "A–Z" else "Neu",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
@@ -355,13 +424,15 @@ private fun LeafSearchBar(
 @Composable
 private fun QuickActionRow(
     onCamera: () -> Unit,
-    onIdentify: () -> Unit
+    onIdentify: () -> Unit,
+    onTips: () -> Unit
 ) {
     val actions = listOf(
-        Triple(Icons.Filled.PhotoCamera, "Kamera", MaterialTheme.colorScheme.surfaceContainerHigh to MaterialTheme.colorScheme.primary),
-        Triple(Icons.Filled.TravelExplore, "Bestimmen", MaterialTheme.colorScheme.tertiary.copy(alpha = 0.12f) to MaterialTheme.colorScheme.tertiary)
+        Triple(Icons.Filled.PhotoCamera, "Erfassen", MaterialTheme.colorScheme.surfaceContainerHigh to MaterialTheme.colorScheme.primary),
+        Triple(Icons.Filled.TravelExplore, "Bestimmen", MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f) to MaterialTheme.colorScheme.tertiary),
+        Triple(Icons.Filled.Spa, "Pflegetipps", MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f) to MaterialTheme.colorScheme.primary)
     )
-    val handlers = listOf(onCamera, onIdentify)
+    val handlers = listOf(onCamera, onIdentify, onTips)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -372,7 +443,7 @@ private fun QuickActionRow(
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
-                    .width(72.dp)
+                    .width(80.dp)
                     .padding(2.dp)
             ) {
                 val interactionSource = remember { MutableInteractionSource() }
@@ -381,8 +452,8 @@ private fun QuickActionRow(
                 Surface(
                     onClick = handlers[index],
                     color = colors.first,
-                    shape = RoundedCornerShape(16.dp),
-                    border = if (index == 2) BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)) else null,
+                    shape = RoundedCornerShape(18.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                     interactionSource = interactionSource,
                     modifier = Modifier
                         .size(56.dp)
@@ -439,6 +510,7 @@ private fun PlantCarouselSection(
     onOpenPlant: (Long) -> Unit,
     onOpenCollection: () -> Unit
 ) {
+    val countLabel = if (plants.size == 1) "1 grüner Schatz" else "${plants.size} grüne Schätze"
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -463,7 +535,7 @@ private fun PlantCarouselSection(
                     Text("Meine Pflanzen", style = MaterialTheme.typography.titleMedium)
                 }
                 Text(
-                    "${plants.size} grüne Schätze in deinem Garten",
+                    "$countLabel in deinem Garten",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -476,6 +548,7 @@ private fun PlantCarouselSection(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
@@ -516,7 +589,7 @@ private fun PlantCarouselCard(
         onClick = onClick,
         color = MaterialTheme.colorScheme.surfaceContainerLowest,
         shape = cardShape,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
         shadowElevation = 6.dp,
         modifier = Modifier.width(256.dp)
     ) {
@@ -530,7 +603,7 @@ private fun PlantCarouselCard(
                 if (plant.photoUri != null) {
                     AsyncImage(
                         model = plant.photoUri,
-                        contentDescription = null,
+                        contentDescription = plant.name,
                         contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
@@ -551,10 +624,9 @@ private fun PlantCarouselCard(
                     }
                 }
                 Surface(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
                     shape = RoundedCornerShape(50),
-                    modifier = Modifier
-                        .padding(10.dp)
+                    modifier = Modifier.padding(10.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -571,7 +643,9 @@ private fun PlantCarouselCard(
                             plant.healthStatus.ifBlank { "Munter & vital" },
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -585,33 +659,36 @@ private fun PlantCarouselCard(
             ) {
                 Text(
                     plant.name.ifBlank { "Ohne Namen" },
-                    style = MaterialTheme.typography.titleSmall
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
                 )
                 Text(
-                    plant.healthStatus.ifBlank { "Munter & vital" },
+                    DateFormats.formatShort(plant.createdAt),
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1
-                )
-            }
-            if (plant.species.isNotBlank()) {
-                Text(
-                    plant.species,
-                    style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
                     color = MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)
+                    modifier = Modifier.padding(start = 8.dp)
                 )
             }
+            Text(
+                plant.species.ifBlank { plant.family.ifBlank { "Botanischer Schatz" } },
+                style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
+                color = MaterialTheme.colorScheme.outline,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)
+            )
         }
     }
 }
 
 @Composable
-private fun CareTipCard() {
+private fun CareTipCard(onClick: () -> Unit) {
     Surface(
+        onClick = onClick,
         shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 16.dp)
@@ -644,7 +721,7 @@ private fun CareTipCard() {
                         )
                     }
                 }
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
                             "HEUTIGER PFLEGETIPP",
@@ -800,13 +877,17 @@ private fun SpecimenCard(
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.tertiary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 10.dp)
                 )
                 Text(
                     plant.species.ifBlank { "Unbekannte Art" },
                     style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Row(
                     modifier = Modifier
@@ -816,14 +897,18 @@ private fun SpecimenCard(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        "Daheim",
+                        plant.family.ifBlank { "Daheim" },
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
                     )
                     Text(
                         dateLabel,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline
+                        color = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.padding(start = 6.dp)
                     )
                 }
             }

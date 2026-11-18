@@ -40,7 +40,7 @@ object Diagnostics {
         val speciesList = plants.map { it.species }.filter { it.isNotBlank() }.distinct().sorted()
 
         return buildString {
-            appendLine("# PlanzenR Diagnose-Report")
+            appendLine("# RömerPlant Diagnose-Report")
             appendLine()
             appendLine("Erstellt: $now")
             appendLine()
@@ -48,7 +48,7 @@ object Diagnostics {
             appendLine("- Version: $versionName ($versionCode)")
             appendLine("- Paket: `$pkg`")
             appendLine()
-            appendLine("## Geraet")
+            appendLine("## Gerät")
             appendLine("- Modell: ${Build.MANUFACTURER} ${Build.MODEL}")
             appendLine("- Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
             appendLine("- Bildschirm: ${screenWidth}x${screenHeight} px, Dichte ${densityDpi} dpi")
@@ -69,7 +69,7 @@ object Diagnostics {
             appendLine(description.ifBlank { "_(keine Angabe)_" })
             appendLine()
             appendLine("---")
-            appendLine("_Report automatisch erzeugt von PlanzenR_")
+            appendLine("_Report automatisch erzeugt von RömerPlant_")
         }.trim()
     }
 }

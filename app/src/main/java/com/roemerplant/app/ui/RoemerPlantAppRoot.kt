@@ -87,9 +87,12 @@ fun RoemerPlantAppRoot(mainViewModel: MainViewModel = hiltViewModel()) {
                     BottomNavBar(
                         currentRoute = currentRoute,
                         onNavigate = { route ->
-                            navController.navigate(route) {
-                                popUpTo(Routes.PLANTS) { saveState = true }
-                                launchSingleTop = true
+                            if (currentRoute != route) {
+                                navController.navigate(route) {
+                                    popUpTo(Routes.PLANTS) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = (route != Routes.ADD)
+                                }
                             }
                         }
                     )
@@ -106,7 +109,20 @@ fun RoemerPlantAppRoot(mainViewModel: MainViewModel = hiltViewModel()) {
                         onAddPlant = { navController.navigate(Routes.ADD) },
                         onOpenPlant = { id -> navController.navigate(Routes.plantDetail(id)) },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) },
-                        onOpenCollection = { navController.navigate(Routes.HERBARIUM) }
+                        onOpenCollection = {
+                            navController.navigate(Routes.HERBARIUM) {
+                                popUpTo(Routes.PLANTS) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        onOpenTips = {
+                            navController.navigate(Routes.TIPS) {
+                                popUpTo(Routes.PLANTS) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
                     )
                 }
                 composable(Routes.HERBARIUM) {
@@ -123,7 +139,8 @@ fun RoemerPlantAppRoot(mainViewModel: MainViewModel = hiltViewModel()) {
                             navController.popBackStack()
                             navController.navigate(Routes.plantDetail(id))
                         },
-                        onBack = { navController.popBackStack() }
+                        onBack = { navController.popBackStack() },
+                        onOpenSettings = { navController.navigate(Routes.SETTINGS) }
                     )
                 }
                 composable(
@@ -155,11 +172,12 @@ private fun BottomNavBar(
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shadowElevation = 12.dp,
-        shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
+        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .navigationBarsPadding()
                 .padding(horizontal = 8.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
@@ -175,24 +193,27 @@ private fun BottomNavBar(
                     ) {
                         Surface(
                             onClick = { onNavigate(item.route) },
-                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            color = if (active) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.secondaryContainer,
                             shape = CircleShape,
                             border = BorderStroke(4.dp, MaterialTheme.colorScheme.surfaceContainerLow),
                             shadowElevation = 6.dp,
-                            modifier = Modifier.size(48.dp)
+                            modifier = Modifier.size(52.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     item.icon,
                                     contentDescription = item.label,
-                                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                                    tint = if (active) MaterialTheme.colorScheme.onPrimary
+                                    else MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                             }
                         }
                         Text(
                             item.label,
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (active) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 2.dp)
                         )
                     }
@@ -206,7 +227,7 @@ private fun BottomNavBar(
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center,
-                            modifier = Modifier.padding(horizontal = 12.dp)
+                            modifier = Modifier.padding(horizontal = 14.dp)
                         ) {
                             Icon(
                                 item.icon,
