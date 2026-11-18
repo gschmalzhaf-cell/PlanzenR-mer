@@ -22,7 +22,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Share
@@ -44,9 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -228,7 +225,6 @@ private fun ReportDialog(
     report: String,
     onDismiss: () -> Unit
 ) {
-    val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
 
     Dialog(onDismissRequest = onDismiss) {
@@ -266,7 +262,10 @@ private fun ReportDialog(
                 ) {
                     OutlinedButton(
                         onClick = {
-                            clipboard.setText(AnnotatedString(report))
+                            val cm = context.getSystemService(android.content.ClipboardManager::class.java)
+                            cm?.setPrimaryClip(
+                                android.content.ClipData.newPlainText("PlanzenR Diagnose-Report", report)
+                            )
                             Toast.makeText(context, "Report kopiert", Toast.LENGTH_SHORT).show()
                         },
                         shape = RoundedCornerShape(50),

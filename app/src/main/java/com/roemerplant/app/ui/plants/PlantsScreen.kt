@@ -75,9 +75,7 @@ import coil.compose.AsyncImage
 import com.roemerplant.app.data.model.Plant
 import com.roemerplant.app.ui.components.LeafPattern
 import com.roemerplant.app.ui.components.WashiTape
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.roemerplant.app.util.DateFormats
 
 
 @Composable
@@ -690,7 +688,7 @@ private fun HerbariumSection(
     onOpenPlant: (Long) -> Unit,
     onAddPlant: () -> Unit
 ) {
-    val dateFormat = remember { SimpleDateFormat("dd. MMM", Locale.GERMANY) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -718,7 +716,7 @@ private fun HerbariumSection(
                 rowPlants.forEach { plant ->
                     SpecimenCard(
                         plant = plant,
-                        dateLabel = dateFormat.format(Date(plant.createdAt)),
+                        dateLabel = DateFormats.formatShort(plant.createdAt),
                         onClick = { onOpenPlant(plant.id) },
                         modifier = Modifier.weight(1f)
                     )

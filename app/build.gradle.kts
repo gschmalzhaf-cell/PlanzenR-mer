@@ -13,7 +13,7 @@ android {
     defaultConfig {
         applicationId = "com.roemerplant.app"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 37
         versionCode = 10
         versionName = "2.10.0"
     }
@@ -50,6 +50,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

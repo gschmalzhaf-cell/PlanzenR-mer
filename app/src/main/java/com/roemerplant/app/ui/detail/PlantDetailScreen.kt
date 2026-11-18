@@ -64,9 +64,7 @@ import com.roemerplant.app.ui.components.EditableField
 import com.roemerplant.app.ui.components.GrowingPlantLoader
 import com.roemerplant.app.ui.components.SectionCard
 import com.roemerplant.app.ui.components.StatusBadge
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.roemerplant.app.util.DateFormats
 
 @Composable
 fun PlantDetailScreen(
@@ -537,11 +535,10 @@ private fun SteckbriefCard(plant: com.roemerplant.app.data.model.Plant) {
                 iconTint = MaterialTheme.colorScheme.secondary,
                 title = "Steckbrief"
             )
-            val dateFormat = remember { SimpleDateFormat("dd. MMM yyyy", Locale.GERMANY) }
             val tiles = listOf(
                 "Familie" to plant.family.ifBlank { "Unbekannt" },
                 "Art" to plant.species.ifBlank { "Unbestimmt" },
-                "Erfasst am" to dateFormat.format(Date(plant.createdAt)),
+                "Erfasst am" to DateFormats.formatLong(plant.createdAt),
                 "Status" to plant.healthStatus.ifBlank { "Unbekannt" }
             )
             tiles.chunked(2).forEach { row ->
@@ -593,9 +590,7 @@ private fun HealthCard(plant: com.roemerplant.app.data.model.Plant) {
                 )
             }
             plant.lastAnalyzedAt?.let { timestamp ->
-                val formatted = remember(timestamp) {
-                    SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.GERMAN).format(Date(timestamp))
-                }
+                val formatted = remember(timestamp) { DateFormats.formatDateTime(timestamp) }
                 Text(
                     "Letzte Analyse: $formatted",
                     style = MaterialTheme.typography.labelMedium,
@@ -608,7 +603,7 @@ private fun HealthCard(plant: com.roemerplant.app.data.model.Plant) {
 
 @Composable
 private fun JournalCard(plant: com.roemerplant.app.data.model.Plant) {
-    val dateFormat = remember { SimpleDateFormat("dd. MMM yyyy", Locale.GERMANY) }
+
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         shape = RoundedCornerShape(20.dp),
@@ -658,7 +653,7 @@ private fun JournalCard(plant: com.roemerplant.app.data.model.Plant) {
                         shadowElevation = 2.dp
                     ) {
                         Text(
-                            dateFormat.format(Date(plant.updatedAt)),
+                            DateFormats.formatLong(plant.updatedAt),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.outline,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
