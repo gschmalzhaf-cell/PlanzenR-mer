@@ -1,4 +1,4 @@
-# RömerPlant
+# Gideon's RömerPlant
 
 Private Android-App zur Verwaltung deiner Pflanzen – mit Foto- oder manueller Erfassung,
 KI-gestützter Bestimmung, Pflegeanweisungen und Gesundheitsanalyse über die Mistral-API.
