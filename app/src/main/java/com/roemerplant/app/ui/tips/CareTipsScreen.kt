@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -33,6 +34,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.roemerplant.app.ui.components.LeafPattern
+import com.roemerplant.app.util.PlantIntelligence
 
 private data class CareTip(
     val icon: ImageVector,
@@ -82,6 +84,19 @@ private val careTips = listOf(
 
 @Composable
 fun CareTipsScreen() {
+    val season = remember { PlantIntelligence.currentSeason() }
+    val seasonalCareTips = remember(season) {
+        PlantIntelligence.seasonalTips(season).map {
+            CareTip(
+                icon = Icons.Filled.Lightbulb,
+                title = it.title,
+                tag = "Saison · ${it.tag}",
+                body = it.body
+            )
+        }
+    }
+    val allTips = remember(seasonalCareTips) { seasonalCareTips + careTips }
+
     Box(modifier = Modifier.fillMaxSize()) {
         LeafPattern(modifier = Modifier.fillMaxSize())
         LazyColumn(
@@ -99,7 +114,7 @@ fun CareTipsScreen() {
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            "Wissen aus dem Gewächshaus",
+                            "Saison-Fokus: ${season.label}",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(start = 4.dp)
@@ -110,14 +125,14 @@ fun CareTipsScreen() {
                         style = MaterialTheme.typography.headlineMedium
                     )
                     Text(
-                        "Kleine Rituale für großes Gedeihen",
+                        "Passend zur Jahreszeit & für dein ganzes Herbarium",
                         style = MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
-            items(careTips.size) { index ->
-                val tip = careTips[index]
+            items(allTips.size) { index ->
+                val tip = allTips[index]
                 Surface(
                     color = MaterialTheme.colorScheme.surfaceContainerLowest,
                     shape = RoundedCornerShape(20.dp),

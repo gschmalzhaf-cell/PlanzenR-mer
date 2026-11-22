@@ -684,11 +684,16 @@ private fun PlantCarouselCard(
 }
 
 @Composable
-private fun CareTipCard(onClick: () -> Unit) {
+private fun CareTipCard(
+    tip: SmartTip,
+    isAlert: Boolean,
+    onClick: () -> Unit
+) {
+    val accent = if (isAlert) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.25f)),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 16.dp)
@@ -698,7 +703,7 @@ private fun CareTipCard(onClick: () -> Unit) {
                 .background(
                     Brush.linearGradient(
                         listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                            accent.copy(alpha = 0.10f),
                             MaterialTheme.colorScheme.surfaceContainerLow,
                             MaterialTheme.colorScheme.secondary.copy(alpha = 0.08f)
                         )
@@ -708,7 +713,8 @@ private fun CareTipCard(onClick: () -> Unit) {
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
+                    color = if (isAlert) MaterialTheme.colorScheme.tertiaryContainer
+                    else MaterialTheme.colorScheme.primaryContainer,
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.size(40.dp)
                 ) {
@@ -716,7 +722,8 @@ private fun CareTipCard(onClick: () -> Unit) {
                         Icon(
                             Icons.Filled.Lightbulb,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            tint = if (isAlert) MaterialTheme.colorScheme.onTertiaryContainer
+                            else MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(22.dp)
                         )
                     }
@@ -724,10 +731,10 @@ private fun CareTipCard(onClick: () -> Unit) {
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            "HEUTIGER PFLEGETIPP",
+                            if (isAlert) "SMARTER GARTEN-CHECK" else "HEUTIGER PFLEGETIPP",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            color = accent
                         )
                         Surface(
                             color = MaterialTheme.colorScheme.surface,
@@ -735,7 +742,7 @@ private fun CareTipCard(onClick: () -> Unit) {
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                         ) {
                             Text(
-                                "Morgenlicht",
+                                tip.tag,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
@@ -743,12 +750,12 @@ private fun CareTipCard(onClick: () -> Unit) {
                         }
                     }
                     Text(
-                        "Blätter sanft abstauben",
+                        tip.title,
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.padding(top = 4.dp)
                     )
                     Text(
-                        "Eine zarte Dusche oder feuchtes Tuch befreit Monstera & Calathea von Staub für optimale Photosynthese.",
+                        tip.body,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 4.dp)

@@ -19,8 +19,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Eco
@@ -40,7 +43,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -67,6 +72,7 @@ import com.roemerplant.app.ui.components.GrowingPlantLoader
 import com.roemerplant.app.ui.components.SectionCard
 import com.roemerplant.app.ui.components.StatusBadge
 import com.roemerplant.app.util.DateFormats
+import com.roemerplant.app.util.PlantIntelligence
 
 @Composable
 fun PlantDetailScreen(
@@ -436,10 +442,34 @@ private fun TitleRow(plant: com.roemerplant.app.data.model.Plant) {
 @Composable
 private fun CareIndicatorGrid(plant: com.roemerplant.app.data.model.Plant) {
     val tiles = listOf(
-        CareTile(Icons.Filled.WaterDrop, "Wasser", plant.careWater.ifBlank { "Erde antrocknen lassen" }, "Mäßig", MaterialTheme.colorScheme.primary),
-        CareTile(Icons.Filled.WbSunny, "Licht", plant.careLight.ifBlank { "Indirektes Sonnenlicht" }, "Hell", MaterialTheme.colorScheme.secondary),
-        CareTile(Icons.Outlined.Air, "Luftfeuchte", plant.careHumidity.ifBlank { "Gerne besprühen" }, "Hoch", MaterialTheme.colorScheme.primary),
-        CareTile(Icons.Filled.Thermostat, "Temperatur", plant.careTemperature.ifBlank { "18 – 25 °C" }, "Warm", MaterialTheme.colorScheme.tertiary)
+        CareTile(
+            Icons.Filled.WaterDrop,
+            "Wasser",
+            plant.careWater.ifBlank { "Erde antrocknen lassen" },
+            PlantIntelligence.waterLevel(plant.careWater),
+            MaterialTheme.colorScheme.primary
+        ),
+        CareTile(
+            Icons.Filled.WbSunny,
+            "Licht",
+            plant.careLight.ifBlank { "Indirektes Sonnenlicht" },
+            PlantIntelligence.lightLevel(plant.careLight),
+            MaterialTheme.colorScheme.secondary
+        ),
+        CareTile(
+            Icons.Outlined.Air,
+            "Luftfeuchte",
+            plant.careHumidity.ifBlank { "Normale Raumluft" },
+            PlantIntelligence.humidityLevel(plant.careHumidity),
+            MaterialTheme.colorScheme.primary
+        ),
+        CareTile(
+            Icons.Filled.Thermostat,
+            "Temperatur",
+            plant.careTemperature.ifBlank { "18 – 25 °C" },
+            PlantIntelligence.temperatureLevel(plant.careTemperature),
+            MaterialTheme.colorScheme.tertiary
+        )
     )
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         tiles.chunked(2).forEach { row ->
@@ -448,6 +478,87 @@ private fun CareIndicatorGrid(plant: com.roemerplant.app.data.model.Plant) {
                     CareIndicatorTile(tile, modifier = Modifier.weight(1f))
                 }
                 if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlantAdvisorCard(
+    question: String,
+    answer: String?,
+    isAsking: Boolean,
+    onQuestionChange: (String) -> Unit,
+    onAsk: (String?) -> Unit
+) {
+    val quickPrompts = listOf(
+        "Warum werden Blattspitzen braun?",
+        "Wann sollte ich umtopfen?",
+        "Giftig für Haustiere?",
+        "Wie vermehre ich sie?"
+    )
+    HerbariumCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SectionHeader(
+                icon = Icons.Filled.AutoAwesome,
+                iconContainer = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                iconTint = MaterialTheme.colorScheme.primary,
+                title = "KI-Botaniker fragen"
+            )
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(quickPrompts) { prompt ->
+                    Surface(
+                        onClick = { if (!isAsking) onAsk(prompt) },
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        shape = RoundedCornerShape(50),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    ) {
+                        Text(
+                            prompt,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+                        )
+                    }
+                }
+            }
+            OutlinedTextField(
+                value = question,
+                onValueChange = onQuestionChange,
+                label = { Text("Eigene Frage zu dieser Pflanze …") },
+                singleLine = true,
+                shape = RoundedCornerShape(14.dp),
+                trailingIcon = {
+                    if (isAsking) {
+                        GrowingPlantLoader(size = 20.dp, modifier = Modifier.padding(end = 8.dp))
+                    } else {
+                        IconButton(
+                            onClick = { onAsk(null) },
+                            enabled = question.isNotBlank()
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Send,
+                                contentDescription = "Frage senden",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+            if (answer != null) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        answer,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(14.dp)
+                    )
+                }
             }
         }
     }

@@ -49,10 +49,12 @@ class PlantAiRepository @Inject constructor(
 
     suspend fun analyzePlant(base64Jpeg: String, userHint: String = ""): Result<PlantAnalysis> =
         runCatching {
+            val season = PlantIntelligence.currentSeason().label
             val prompt = buildString {
                 append(
                     "Du bist ein erfahrener Botaniker und Pflanzenexperte. Analysiere die Pflanze auf dem Foto. " +
-                        "Bestimme die Pflanzenart, erstle eine kurze Beschreibung, " +
+                        "Aktuelle Jahreszeit: $season. " +
+                        "Bestimme die Pflanzenart, erstelle eine kurze Beschreibung, " +
                         "vollständige Pflegeanweisungen und eine ehrliche Gesundheitsanalyse. " +
                         "Beantworte alles auf Deutsch. Wenn du die Pflanze nicht sicher bestimmen kannst, " +
                         "schreibe es ehrlich und gib die wahrscheinlichsten Möglichkeiten an."
@@ -85,18 +87,92 @@ class PlantAiRepository @Inject constructor(
             val content = response.choices.firstOrNull()?.message?.content
                 ?: throw IllegalStateException("Leere Antwort von Mistral")
             json.decodeFromString<PlantAnalysis>(content)
-        }.recoverCatching { error ->
-            if (error is HttpException) {
-                val body = error.response()?.errorBody()?.string().orEmpty()
-                if (error.code() == 404) {
-                    throw IllegalStateException(
-                        "Modell nicht gefunden (404). Bitte in den Einstellungen ein aktuelles KI-Modell wählen."
+        }.recoverMistralErrors()
+
+    suspend fun generateCareProfileByName(plantNameOrSpecies: String): Result<PlantAnalysis> =
+        runCatching {
+            val season = PlantIntelligence.currentSeason().label
+            val prompt = "Du bist ein erfahrener Botaniker. Erstelle einen vollständigen, praxisnahen " +
+                "Pflege-Steckbrief für die Pflanze „$plantNameOrSpecies“ (aktuelle Jahreszeit: $season). " +
+                "Ergänze den botanischen Artnamen, den deutschen Namen, die Pflanzenfamilie, eine kurze " +
+                "Beschreibung und konkrete Pflegehinweise (Licht, Gießen, Luftfeuchtigkeit, Temperatur, " +
+                "Düngen, Substrat) auf Deutsch. Da kein Foto vorliegt, setze health.status auf „unbekannt“ " +
+                "und gib 2–3 allgemeine Vorsorge-Tipps unter health.instructions."
+            val request = ChatCompletionRequest(
+                model = settings.mistralModel.first(),
+                temperature = 0.2,
+                messages = listOf(
+                    ChatMessage(
+                        role = "user",
+                        content = listOf(ContentPart.text(prompt))
                     )
-                }
-                throw IllegalStateException("Mistral-Fehler ${error.code()}: $body")
+                ),
+                response_format = ResponseFormat(
+                    type = "json_schema",
+                    json_schema = JsonSchemaSpec(
+                        name = "plant_analysis",
+                        schema = json.parseToJsonElement(ANALYSIS_SCHEMA)
+                    )
+                )
+            )
+            val response = api.chatCompletions(request)
+            val content = response.choices.firstOrNull()?.message?.content
+                ?: throw IllegalStateException("Leere Antwort von Mistral")
+            json.decodeFromString<PlantAnalysis>(content)
+        }.recoverMistralErrors()
+
+    suspend fun askPlantAdvisor(plant: Plant, question: String): Result<String> =
+        runCatching {
+            val season = PlantIntelligence.currentSeason().label
+            val contextPrompt = buildString {
+                appendLine("Du bist ein freundlicher, präziser Botaniker in der Android-App RömerPlant.")
+                appendLine("Beantworte die Frage des Nutzers kurz, konkret und praxisnah auf Deutsch (max. 5 Sätze oder kurze Stichpunkte).")
+                appendLine("Aktuelle Jahreszeit: $season")
+                appendLine("Pflanzen-Kontext:")
+                appendLine("- Name: ${plant.name.ifBlank { "Unbekannt" }}")
+                if (plant.species.isNotBlank()) appendLine("- Art: ${plant.species}")
+                if (plant.family.isNotBlank()) appendLine("- Familie: ${plant.family}")
+                if (plant.careLight.isNotBlank()) appendLine("- Licht: ${plant.careLight}")
+                if (plant.careWater.isNotBlank()) appendLine("- Gießen: ${plant.careWater}")
+                if (plant.healthStatus.isNotBlank()) appendLine("- Gesundheitsstatus: ${plant.healthStatus}")
+                if (plant.healthAnalysis.isNotBlank()) appendLine("- Letzte Analyse: ${plant.healthAnalysis}")
+                appendLine()
+                append("Frage: $question")
             }
-            throw error
+            val request = ChatCompletionRequest(
+                model = settings.mistralModel.first(),
+                temperature = 0.4,
+                messages = listOf(
+                    ChatMessage(
+                        role = "user",
+                        content = listOf(ContentPart.text(contextPrompt))
+                    )
+                )
+            )
+            val response = api.chatCompletions(request)
+            response.choices.firstOrNull()?.message?.content?.trim()
+                ?.takeIf { it.isNotBlank() }
+                ?: throw IllegalStateException("Leere Antwort von Mistral")
+        }.recoverMistralErrors()
+
+    private fun <T> Result<T>.recoverMistralErrors(): Result<T> = recoverCatching { error ->
+        if (error is HttpException) {
+            val body = error.response()?.errorBody()?.string().orEmpty()
+            when (error.code()) {
+                401 -> throw IllegalStateException(
+                    "Ungültiger Mistral-API-Key (401). Bitte den Key im Profil prüfen."
+                )
+                404 -> throw IllegalStateException(
+                    "Modell nicht gefunden (404). Bitte im Profil ein aktuelles KI-Modell wählen."
+                )
+                429 -> throw IllegalStateException(
+                    "Anfragelimit bei Mistral erreicht (429). Bitte kurz warten und erneut versuchen."
+                )
+                else -> throw IllegalStateException("Mistral-Fehler ${error.code()}: $body")
+            }
         }
+        throw error
+    }
 
     companion object {
         private const val ANALYSIS_SCHEMA = """{

@@ -68,19 +68,21 @@ class AddPlantViewModel @Inject constructor(
     }
 
     fun analyzePhoto() {
-        val photoUri = _state.value.photoUri ?: return
-        _state.value = _state.value.copy(isAnalyzing = true, error = null)
+        val current = _state.value
+        val photoUri = current.photoUri ?: return
+        val hint = listOf(current.name, current.species).filter { it.isNotBlank() }.joinToString(" / ")
+        _state.value = current.copy(isAnalyzing = true, error = null)
         viewModelScope.launch {
             val base64 = imageHandler.toBase64Jpeg(Uri.parse(photoUri))
             if (base64 == null) {
                 _state.value = _state.value.copy(isAnalyzing = false, error = "Foto konnte nicht gelesen werden.")
                 return@launch
             }
-            aiRepository.analyzePlant(base64)
+            aiRepository.analyzePlant(base64, hint)
                 .onSuccess { analysis ->
-                    val current = _state.value
-                    _state.value = current.copy(
-                        name = current.name.ifBlank { analysis.commonName.ifBlank { analysis.species } },
+                    val latest = _state.value
+                    _state.value = latest.copy(
+                        name = latest.name.ifBlank { analysis.commonName.ifBlank { analysis.species } },
                         species = analysis.species,
                         family = analysis.family,
                         description = analysis.description,
@@ -93,6 +95,41 @@ class AddPlantViewModel @Inject constructor(
                         healthStatus = analysis.health.status,
                         healthAnalysis = analysis.health.analysis,
                         healthInstructions = analysis.health.instructions.joinToString("\n"),
+                        isAnalyzing = false
+                    )
+                }
+                .onFailure { error ->
+                    _state.value = _state.value.copy(isAnalyzing = false, error = error.message)
+                }
+        }
+    }
+
+    fun generateProfileFromName() {
+        val current = _state.value
+        val query = current.species.ifBlank { current.name }.trim()
+        if (query.isBlank()) {
+            _state.value = current.copy(error = "Bitte zuerst einen Namen oder eine Art eingeben.")
+            return
+        }
+        _state.value = current.copy(isAnalyzing = true, error = null)
+        viewModelScope.launch {
+            aiRepository.generateCareProfileByName(query)
+                .onSuccess { analysis ->
+                    val latest = _state.value
+                    _state.value = latest.copy(
+                        name = latest.name.ifBlank { analysis.commonName.ifBlank { analysis.species } },
+                        species = analysis.species.ifBlank { latest.species },
+                        family = analysis.family.ifBlank { latest.family },
+                        description = analysis.description.ifBlank { latest.description },
+                        careLight = analysis.care.light.ifBlank { latest.careLight },
+                        careWater = analysis.care.water.ifBlank { latest.careWater },
+                        careHumidity = analysis.care.humidity.ifBlank { latest.careHumidity },
+                        careTemperature = analysis.care.temperature.ifBlank { latest.careTemperature },
+                        careFertilizer = analysis.care.fertilizer.ifBlank { latest.careFertilizer },
+                        careSoil = analysis.care.soil.ifBlank { latest.careSoil },
+                        healthInstructions = if (latest.healthInstructions.isBlank()) {
+                            analysis.health.instructions.joinToString("\n")
+                        } else latest.healthInstructions,
                         isAnalyzing = false
                     )
                 }

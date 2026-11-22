@@ -197,6 +197,25 @@ fun AddPlantScreen(
                 EditableField("Art (z. B. Monstera deliciosa)", state.species) { v ->
                     viewModel.update { it.copy(species = v) }
                 }
+                if (apiKeyConfigured && (state.name.isNotBlank() || state.species.isNotBlank())) {
+                    OutlinedButton(
+                        onClick = viewModel::generateProfileFromName,
+                        enabled = !state.isAnalyzing,
+                        shape = RoundedCornerShape(50),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (state.isAnalyzing) {
+                            GrowingPlantLoader(
+                                modifier = Modifier.padding(end = 8.dp),
+                                size = 20.dp
+                            )
+                            Text("KI erstellt Pflegeplan …")
+                        } else {
+                            Icon(Icons.Filled.TravelExplore, contentDescription = null)
+                            Text("Pflegeplan per KI ergänzen", modifier = Modifier.padding(start = 8.dp))
+                        }
+                    }
+                }
                 EditableField("Familie (z. B. Aronstabgewächse)", state.family) { v ->
                     viewModel.update { it.copy(family = v) }
                 }

@@ -21,6 +21,9 @@ data class PlantDetailUiState(
     val plant: Plant? = null,
     val isEditing: Boolean = false,
     val isAnalyzing: Boolean = false,
+    val advisorQuestion: String = "",
+    val advisorAnswer: String? = null,
+    val isAskingAdvisor: Boolean = false,
     val error: String? = null
 )
 
@@ -73,6 +76,36 @@ class PlantDetailViewModel @Inject constructor(
 
     fun onPhotoTaken(uri: Uri, success: Boolean) {
         if (success) onPhotoPicked(uri)
+    }
+
+    fun onAdvisorQuestionChange(value: String) {
+        _state.value = _state.value.copy(advisorQuestion = value)
+    }
+
+    fun askAdvisor(presetQuestion: String? = null) {
+        val plant = _state.value.plant ?: return
+        val question = (presetQuestion ?: _state.value.advisorQuestion).trim()
+        if (question.isBlank()) return
+        _state.value = _state.value.copy(
+            advisorQuestion = question,
+            isAskingAdvisor = true,
+            error = null
+        )
+        viewModelScope.launch {
+            aiRepository.askPlantAdvisor(plant, question)
+                .onSuccess { answer ->
+                    _state.value = _state.value.copy(
+                        advisorAnswer = answer,
+                        isAskingAdvisor = false
+                    )
+                }
+                .onFailure { error ->
+                    _state.value = _state.value.copy(
+                        isAskingAdvisor = false,
+                        error = error.message
+                    )
+                }
+        }
     }
 
     fun analyzeHealth() {
