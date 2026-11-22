@@ -1,6 +1,8 @@
 package com.roemerplant.app.data.ai
 
+import com.roemerplant.app.data.model.Plant
 import com.roemerplant.app.data.settings.SettingsRepository
+import com.roemerplant.app.util.PlantIntelligence
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType

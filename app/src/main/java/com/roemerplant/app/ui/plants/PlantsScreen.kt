@@ -76,6 +76,8 @@ import com.roemerplant.app.data.model.Plant
 import com.roemerplant.app.ui.components.LeafPattern
 import com.roemerplant.app.ui.components.WashiTape
 import com.roemerplant.app.util.DateFormats
+import com.roemerplant.app.util.PlantIntelligence
+import com.roemerplant.app.util.SmartTip
 
 @Composable
 fun PlantsScreen(
@@ -91,11 +93,16 @@ fun PlantsScreen(
     var query by remember { mutableStateOf("") }
     var sortByName by remember { mutableStateOf(true) }
 
+    val attentionPlants = remember(plants) { PlantIntelligence.plantsNeedingAttention(plants) }
+    val smartTip = remember(plants) { PlantIntelligence.dailySmartTip(plants) }
+
     val filtered = remember(plants, query, sortByName) {
         val byQuery = if (query.isBlank()) plants else plants.filter {
             it.name.contains(query, ignoreCase = true) ||
                 it.species.contains(query, ignoreCase = true) ||
-                it.family.contains(query, ignoreCase = true)
+                it.family.contains(query, ignoreCase = true) ||
+                it.healthStatus.contains(query, ignoreCase = true) ||
+                it.description.contains(query, ignoreCase = true)
         }
         if (sortByName) byQuery.sortedBy { it.name.lowercase() } else byQuery.sortedByDescending { it.createdAt }
     }
@@ -167,7 +174,16 @@ fun PlantsScreen(
                             onOpenCollection = onOpenCollection
                         )
                     }
-                    item(key = "caretip") { CareTipCard(onClick = onOpenTips) }
+                    item(key = "caretip") {
+                        CareTipCard(
+                            tip = smartTip,
+                            isAlert = attentionPlants.isNotEmpty(),
+                            onClick = {
+                                val target = attentionPlants.firstOrNull()
+                                if (target != null) onOpenPlant(target.id) else onOpenTips()
+                            }
+                        )
+                    }
                     item(key = "sammlung") {
                         HerbariumSection(
                             plants = filtered,
