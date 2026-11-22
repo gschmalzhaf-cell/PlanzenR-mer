@@ -46,8 +46,10 @@ object PlantIntelligence {
         val lower = text.lowercase()
         return when {
             lower.isBlank() -> "Mäßig"
-            listOf("wenig", "sparsam", "selten", "trocken", "kaktus", "kaum").any { lower.contains(it) } -> "Wenig"
-            listOf("viel", "ständig feucht", "gleichmäßig feucht", "hoch", "häufig", "täglich").any { lower.contains(it) } -> "Feucht"
+            listOf("viel", "ständig feucht", "gleichmäßig feucht", "nicht austrocknen", "häufig", "täglich")
+                .any { lower.contains(it) } -> "Feucht"
+            listOf("wenig", "sparsam", "selten", "kaktus", "kaum", "komplett austrocknen", "vollständig austrocknen", "trocken halten")
+                .any { lower.contains(it) } -> "Wenig"
             else -> "Mäßig"
         }
     }
